@@ -4,7 +4,7 @@ import { I18nProvider } from "@/lib/i18n";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Fintrack",
+  title: "Planifik",
   description: "Controle suas finanças pessoais.",
 };
 

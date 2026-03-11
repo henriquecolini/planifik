@@ -171,7 +171,7 @@ const I18nContext = createContext<I18nContextType>({
   t: (key) => key,
 });
 
-const STORAGE_KEY = "fintrack_lang";
+const STORAGE_KEY = "planifik_lang";
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("pt-BR");

@@ -35,7 +35,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white border border-border-default shadow-sm mb-4">
             <span className="text-2xl">💸</span>
           </div>
-          <h1 className="text-2xl font-bold text-text-primary">Fintrack</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Planifik</h1>
           <p className="text-text-secondary mt-1 text-sm">Your personal finance companion</p>
         </div>
 
