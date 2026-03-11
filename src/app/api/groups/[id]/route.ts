@@ -17,7 +17,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
   const member = await requireMembership(params.id, userId);
   if (!member) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -38,7 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
   const member = await requireMembership(params.id, userId);
   if (!member || member.role !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -57,7 +57,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
   const member = await requireMembership(params.id, userId);
   if (!member || member.role !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

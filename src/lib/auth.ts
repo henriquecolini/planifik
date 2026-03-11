@@ -27,24 +27,25 @@ export const authOptions: NextAuthOptions = {
     // Expose the user id in the session so we don't have to query by email
     async session({ session, user }) {
       if (session.user) {
-        (session.user as typeof session.user & { id: string }).id = user.id;
+        session.user.id = user.id;
       }
       return session;
     },
+  },
 
-    // After the first sign-in, create a default "Personal" group for the user
-    async signIn({ user, isNewUser }) {
-      if (isNewUser && user.id) {
-        await prisma.group.create({
-          data: {
-            name: "Personal",
-            members: {
-              create: { userId: user.id, role: "owner" },
+  events: {
+    async createUser({ user }) {
+      await prisma.group.create({
+        data: {
+          name: "Personal",
+          members: {
+            create: {
+              userId: user.id,
+              role: "owner",
             },
           },
-        });
-      }
-      return true;
+        },
+      });
     },
   },
 

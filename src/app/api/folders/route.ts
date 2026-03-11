@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId  = (session.user as typeof session.user & { id: string }).id;
+  const userId  = session?.user?.id;
   const groupId = req.nextUrl.searchParams.get("groupId");
   if (!groupId) return NextResponse.json({ error: "groupId is required" }, { status: 400 });
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
   const body: CreateFolderRequest = await req.json();
 
   const member = await prisma.groupMember.findUnique({

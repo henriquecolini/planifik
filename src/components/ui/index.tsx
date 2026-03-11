@@ -104,11 +104,11 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
-  prefix?: React.ReactNode;
-  suffix?: React.ReactNode;
+  leftContent?: React.ReactNode;
+  rightContent?: React.ReactNode;
 }
 
-export function Input({ label, error, hint, prefix, suffix, className, id, ...props }: InputProps) {
+export function Input({ label, error, hint, leftContent, rightContent, className, id, ...props }: InputProps) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
   return (
     <div className="space-y-1">
@@ -121,13 +121,13 @@ export function Input({ label, error, hint, prefix, suffix, className, id, ...pr
         "flex items-center bg-white border rounded-lg overflow-hidden transition-colors",
         error ? "border-bill" : "border-border-default focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/20"
       )}>
-        {prefix && <span className="pl-3 text-text-muted text-sm">{prefix}</span>}
+        {leftContent && <span className="pl-3 text-text-muted text-sm">{leftContent}</span>}
         <input
           id={inputId}
           className={cn("flex-1 bg-transparent text-text-primary placeholder:text-text-muted text-sm px-3 py-2 outline-none", className)}
           {...props}
         />
-        {suffix && <span className="pr-3 text-text-muted text-sm">{suffix}</span>}
+        {rightContent && <span className="pr-3 text-text-muted text-sm">{rightContent}</span>}
       </div>
       {error && <p className="text-xs text-bill">{error}</p>}
       {hint && !error && <p className="text-xs text-text-muted">{hint}</p>}

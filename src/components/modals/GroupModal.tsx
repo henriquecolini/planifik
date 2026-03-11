@@ -17,8 +17,7 @@ interface GroupModalProps {
 export function GroupModal({ open, onClose, mode, activeGroup, onCreated, onGroupUpdated }: GroupModalProps) {
   const { data: session } = useSession();
   const { t } = useI18n();
-  const userId = (session?.user as typeof session.user & { id?: string })?.id;
-
+  const userId = session?.user?.id;
   const [name,        setName]        = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [loading,     setLoading]     = useState(false);

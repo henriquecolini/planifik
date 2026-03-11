@@ -10,7 +10,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
 
   // Only owners can invite
   const membership = await prisma.groupMember.findUnique({
@@ -46,7 +46,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const requesterId = (session.user as typeof session.user & { id: string }).id;
+  const requesterId = session?.user?.id;
   const { userId: targetUserId } = await req.json();
 
   const requesterMembership = await prisma.groupMember.findUnique({

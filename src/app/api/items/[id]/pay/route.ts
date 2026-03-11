@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
   const item = await authorize(params.id, userId);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -105,7 +105,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
   const item = await authorize(params.id, userId);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

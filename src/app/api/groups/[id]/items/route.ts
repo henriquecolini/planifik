@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
 
   const member = await prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId: params.id, userId } },

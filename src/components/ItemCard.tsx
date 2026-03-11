@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { BankIcon, ItemIcon } from "./Icons";
 import { CentsInput } from "./ui/CentsInput";
 import type { Item } from "@/types";
+import {DraggableAttributes} from "@dnd-kit/core";
 
 interface ItemCardProps {
   item: Item;
@@ -17,7 +18,7 @@ interface ItemCardProps {
   onUnpay: (item: Item) => void;
   onAmountSaved: (item: Item) => void;
   dragHandleListeners?: Record<string, unknown>;
-  dragHandleAttributes?: Record<string, unknown>;
+  dragHandleAttributes?: DraggableAttributes;
   isDragging?: boolean;
 }
 
@@ -260,7 +261,7 @@ export function ItemCardOverlay({ item }: { item: Item }) {
       <div className="flex items-center gap-3 px-3 py-3 rounded-xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90">
         <GripVertical size={14} className="text-text-muted flex-shrink-0" />
         <div className="w-8 h-8 rounded-lg bg-elevated flex items-center justify-center text-lg flex-shrink-0">
-          <ItemIcon type={item.type} icon={item.icon} bank={item.bank} />
+          <ItemIcon type={item.type} icon={item.icon}/>
         </div>
         <span className="flex-1 text-sm font-medium text-text-primary truncate">{item.title}</span>
         <span className={cn(

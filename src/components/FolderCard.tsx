@@ -4,6 +4,7 @@ import { ChevronDown, GripVertical, Pencil } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import type { Folder } from "@/types";
+import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";
 
 interface FolderCardProps {
     folder: Folder;
@@ -12,8 +13,8 @@ interface FolderCardProps {
     isCollapsed: boolean;
     onToggleCollapse: () => void;
     /** dnd-kit drag handle listeners — spread onto the drag handle element */
-    dragHandleListeners?: Record<string, unknown>;
-    dragHandleAttributes?: Record<string, unknown>;
+    dragHandleListeners?: DraggableSyntheticListeners;
+    dragHandleAttributes?: DraggableAttributes;
     isDragging?: boolean;
     onEdit?: (folder: Folder) => void;
 }

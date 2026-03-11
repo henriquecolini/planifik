@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
   const folder = await authorize(params.id, userId);
   if (!folder) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -44,7 +44,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
   const folder = await authorize(params.id, userId);
   if (!folder) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

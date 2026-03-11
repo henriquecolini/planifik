@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as typeof session.user & { id: string }).id;
+  const userId = session?.user?.id;
   const { folderIds } = await req.json();
 
   if (!Array.isArray(folderIds) || folderIds.length === 0) {

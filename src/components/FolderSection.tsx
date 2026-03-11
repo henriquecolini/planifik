@@ -7,6 +7,7 @@ import { SortableItem } from "./SortableItem";
 import { FolderCard } from "./FolderCard";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { Folder, Item } from "@/types";
+import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";
 
 interface FolderSectionProps {
   folder: Folder | null;
@@ -22,8 +23,8 @@ interface FolderSectionProps {
   onUnpay: (item: Item) => void;
   onAmountSaved: (item: Item) => void;
   onEditFolder?: (folder: Folder) => void;
-  dragHandleListeners?: Record<string, unknown>;
-  dragHandleAttributes?: Record<string, unknown>;
+  dragHandleListeners?: DraggableSyntheticListeners;
+  dragHandleAttributes?: DraggableAttributes;
   isDragging?: boolean;
 }
 
