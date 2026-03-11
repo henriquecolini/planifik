@@ -57,6 +57,7 @@ export interface Item {
   dueDay: number | null;
   dueNextMonth: boolean;
   dueDate: string | null;
+  position: number;
   createdAt: string;
   updatedAt: string;
   user?: User;

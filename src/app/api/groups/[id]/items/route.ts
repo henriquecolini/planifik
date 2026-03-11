@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       exceptions: { where: { month } },
       balances:   { where: { month } },
     },
-    orderBy: [{ folderId: "asc" }, { createdAt: "asc" }],
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
   });
 
   // Strip internal relation arrays, attach computed fields

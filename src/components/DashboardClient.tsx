@@ -16,6 +16,27 @@ import { Plus, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  defaultDropAnimationSideEffects,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+
 import { TopBar }            from "./TopBar";
 import { MonthSelector }     from "./MonthSelector";
 import { BalanceCounter }    from "./BalanceCounter";
@@ -23,8 +44,11 @@ import { FolderSection }     from "./FolderSection";
 import { AddItemModal }      from "./modals/AddItemModal";
 import { PayItemModal }      from "./modals/PayItemModal";
 import { DeleteConfirmModal } from "./modals/DeleteConfirmModal";
-import { FolderModal }       from "./modals/FolderModal";
+import { FolderPopup }       from "./FolderPopup";
 import { GroupModal }        from "./modals/GroupModal";
+import { SortableFolder }    from "./SortableFolder";
+import { FolderCardOverlay } from "./FolderCard";
+import { ItemCardOverlay }   from "./ItemCard";
 
 import { currentMonth, toMonthString } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -49,6 +73,31 @@ export function DashboardClient() {
   const [monthTotal,    setMonthTotal]    = useState(0);
   const [folderTotals,  setFolderTotals]  = useState<Record<string, number>>({});
   const [loading,       setLoading]       = useState(true);
+
+  // ── Drag & Drop state ──────────────────────────────────────────────────────
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeType, setActiveType] = useState<"folder" | "item" | null>(null);
+
+  // Set of folder IDs that are collapsed
+  const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(new Set());
+
+  const toggleFolderCollapse = useCallback((id: string) => {
+    setCollapsedFolderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // We use this to temporarily store the folders/items when a drag starts,
+  // to prevent weird resets or to handle constraints better if needed.
+  const [dragStartFolders, setDragStartFolders] = useState<Folder[]>([]);
+
+  const sensors = useSensors(
+      useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+      useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   // ── Modal state ────────────────────────────────────────────────────────────
   const [addItemOpen,     setAddItemOpen]     = useState(false);
@@ -84,16 +133,16 @@ export function DashboardClient() {
   useEffect(() => {
     if (!activeGroup) return;
     fetch(`/api/folders?groupId=${activeGroup.id}`)
-      .then((r) => r.json())
-      .then(setFolders);
+        .then((r) => r.json())
+        .then(setFolders);
   }, [activeGroup]);
 
   // ── Fetch items when group or month changes ────────────────────────────────
   const monthString = toMonthString(selectedMonth);
 
-  const fetchItems = useCallback(async () => {
+  const fetchItems = useCallback(async (silent = false) => {
     if (!activeGroup) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const res  = await fetch(`/api/groups/${activeGroup.id}/items?month=${monthString}`);
       const data: ItemsApiResponse = await res.json();
@@ -101,7 +150,7 @@ export function DashboardClient() {
       setMonthTotal(data.monthTotal);
       setFolderTotals(data.folderTotals);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [activeGroup, monthString]);
 
@@ -110,13 +159,13 @@ export function DashboardClient() {
   // ── Derived data ───────────────────────────────────────────────────────────
 
   const accounts = useMemo(
-    () => items.filter((i) => i.type === "CREDIT_CARD" || i.type === "CHECKING_ACCOUNT"),
-    [items],
+      () => items.filter((i) => i.type === "CREDIT_CARD" || i.type === "CHECKING_ACCOUNT"),
+      [items],
   );
 
   const pendingCount = useMemo(
-    () => items.filter((i) => !i.isPaid && (i.type === "BILL" || i.type === "INCOME")).length,
-    [items],
+      () => items.filter((i) => !i.isPaid && (i.type === "BILL" || i.type === "INCOME")).length,
+      [items],
   );
 
   // Group items by folderId (null = unfiled)
@@ -132,6 +181,30 @@ export function DashboardClient() {
     return map;
   }, [items, folders]);
 
+  // Combined sortable items: folders + their items in order (only if folder is expanded)
+  const allSortableIds = useMemo(() => {
+    const ids: string[] = [];
+    folders.forEach((f) => {
+      ids.push(f.id);
+      const folderItems = itemsByFolder.get(f.id) ?? [];
+      folderItems.forEach((i) => ids.push(i.id));
+    });
+    const unfiledItems = itemsByFolder.get(null) ?? [];
+    unfiledItems.forEach((i) => ids.push(i.id));
+    return ids;
+  }, [folders, itemsByFolder]);
+
+  const folderIds = useMemo(() => folders.map(f => f.id), [folders]);
+  const itemIds = useMemo(() => {
+    const ids = items.map(i => i.id);
+    ids.push("unfiled");
+    return ids;
+  }, [items]);
+
+  // Track the original order for fallback/validation if needed
+  const [initialFolders] = useState(folders);
+  const [initialItems]   = useState(items);
+
   // ── Event handlers ─────────────────────────────────────────────────────────
 
   const handlePay    = useCallback((item: Item) => setPayItem(item),    []);
@@ -141,19 +214,19 @@ export function DashboardClient() {
   const handleUnpay = useCallback(async (item: Item) => {
     await fetch(`/api/items/${item.id}/pay?month=${monthString}`, { method: "DELETE" });
     // Refetch so server recomputes totals
-    fetchItems();
+    fetchItems(true);
   }, [monthString, fetchItems]);
 
   const handleAmountSaved = useCallback((updatedItem: Item) => {
     // Update the item locally; refetch to get accurate server-side totals
     setItems((prev) => prev.map((i) => i.id === updatedItem.id ? updatedItem : i));
-    fetchItems();
+    fetchItems(true);
   }, [fetchItems]);
 
   const handlePayConfirm = useCallback(async (
-    method: PaymentMethod | null,
-    paymentItemId: string | null,
-    deductBalance: boolean,
+      method: PaymentMethod | null,
+      paymentItemId: string | null,
+      deductBalance: boolean,
   ) => {
     if (!payItem) return;
     await fetch(`/api/items/${payItem.id}/pay`, {
@@ -162,7 +235,7 @@ export function DashboardClient() {
       body: JSON.stringify({ month: monthString, paymentMethod: method, paymentItemId, deductBalance }),
     });
     setPayItem(null);
-    fetchItems();
+    fetchItems(true);
   }, [payItem, monthString, fetchItems]);
 
   const handleDeleteConfirm = useCallback(async (mode: DeleteMode) => {
@@ -171,165 +244,326 @@ export function DashboardClient() {
     if (mode !== "all") params.set("month", monthString);
     await fetch(`/api/items/${deleteItem.id}?${params}`, { method: "DELETE" });
     setDeleteItem(null);
-    fetchItems();
+    fetchItems(true);
   }, [deleteItem, monthString, fetchItems]);
 
-  const handleItemCreated = useCallback(() => fetchItems(), [fetchItems]);
+  const handleItemCreated = useCallback(() => fetchItems(true), [fetchItems]);
 
   const handleItemUpdated = useCallback((item: Item) => {
     setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, ...item } : i));
-    fetchItems();
+    fetchItems(true);
   }, [fetchItems]);
 
-  // ── Loading / auth states ──────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const id = active.id as string;
+    setActiveId(id);
+    const type = active.data.current?.type as "folder" | "item";
+    setActiveType(type);
+    
+    if (type === "folder") {
+      setDragStartFolders(folders);
+      // Automatically collapse the folder being dragged
+      setCollapsedFolderIds((prev) => new Set(prev).add(id));
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const overId = over.id as string;
+    const overType = over.data.current?.type as "folder" | "item";
+
+    // ── Folder constraints ───────────────────────────────────────────────────
+    if (activeType === "folder") {
+      // Folders can only be dragged over other folders.
+      // We ignore items and "unfiled"
+      if (overType !== "folder" || overId === "unfiled") return;
+
+      setFolders((prev) => {
+        const oldIndex = prev.findIndex((f) => f.id === active.id);
+        const newIndex = prev.findIndex((f) => f.id === overId);
+        if (oldIndex === -1 || newIndex === -1) return prev;
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+      return;
+    }
+
+    // ── Item constraints ─────────────────────────────────────────────────────
+    if (activeType === "item") {
+      setItems((prev) => {
+        const activeIndex = prev.findIndex((i) => i.id === active.id);
+        if (activeIndex === -1) return prev;
+
+        const activeItem = prev[activeIndex];
+        let newFolderId = activeItem.folderId;
+        let overIndex = -1;
+
+        if (overType === "folder") {
+          // If hovering over a folder header, check if it's open
+          if (overId !== "unfiled" && collapsedFolderIds.has(overId)) {
+            // Nothing happens when an item is placed in front of a closed folder
+            return prev;
+          }
+          newFolderId = overId === "unfiled" ? null : overId;
+        } else {
+          overIndex = prev.findIndex((i) => i.id === overId);
+          if (overIndex !== -1) newFolderId = prev[overIndex].folderId;
+        }
+
+        // If nothing changed in terms of position or folderId, return
+        if (activeIndex === overIndex && newFolderId === activeItem.folderId) return prev;
+
+        let newItems: Item[];
+        if (overType === "item" && overIndex !== -1) {
+          newItems = arrayMove(prev, activeIndex, overIndex);
+        } else if (overType === "folder") {
+          const item = { ...activeItem, folderId: newFolderId };
+          const temp = [...prev];
+          temp.splice(activeIndex, 1);
+          // Find the last item in the target folder to place this item after it
+          const lastInFolderIndex = [...temp].reverse().findIndex(i => i.folderId === newFolderId);
+          const targetIndex = lastInFolderIndex !== -1 ? temp.length - lastInFolderIndex : 0;
+          temp.splice(targetIndex, 0, item);
+          newItems = temp;
+        } else {
+          return prev;
+        }
+
+        return newItems.map(i => i.id === active.id ? { ...i, folderId: newFolderId } : i);
+      });
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    setActiveType(null);
+    if (!over) {
+      // If dropped outside, we might need to refetch to ensure UI matches server (since we did optimistic updates in DragOver)
+      fetchItems(true);
+      return;
+    }
+
+    if (activeType === "folder") {
+      // Persist folder order
+      await fetch("/api/folders/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folderIds: folders.map((f) => f.id) }),
+      });
+      fetchItems(true);
+    } else if (activeType === "item") {
+      const activeId = active.id as string;
+      const activeItem = items.find((i) => i.id === activeId);
+      if (!activeItem) return;
+
+      const folderId = activeItem.folderId;
+      const itemIds = items.filter((i) => i.folderId === folderId).map((i) => i.id);
+
+      fetch("/api/items/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId: activeId, folderId, itemIds }),
+      }).then(() => fetchItems(true));
+    }
+  };
 
   if (status === "loading" || status === "unauthenticated") {
     return (
-      <div className="min-h-screen bg-base flex items-center justify-center">
-        <Loader2 size={24} className="animate-spin text-text-muted" />
-      </div>
+        <div className="min-h-screen bg-base flex items-center justify-center">
+          <Loader2 size={24} className="animate-spin text-text-muted" />
+        </div>
     );
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-base">
+      <div className="min-h-screen bg-base">
 
-      <TopBar
-        groups={groups}
-        activeGroup={activeGroup}
-        onGroupChange={setActiveGroup}
-        onOpenFolders={() => { setEditFolder(null); setFolderModalOpen(true); }}
-        onCreateGroup={() => setGroupModal("create")}
-        onManageGroup={() => setGroupModal("manage")}
-      />
+        <TopBar
+            groups={groups}
+            activeGroup={activeGroup}
+            onGroupChange={setActiveGroup}
+            onCreateFolder={() => { setEditFolder(null); setFolderModalOpen(true); }}
+            onCreateGroup={() => setGroupModal("create")}
+            onManageGroup={() => setGroupModal("manage")}
+        />
 
-      <div className="bg-base/80 backdrop-blur-sm sticky top-14 z-20">
-        <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
+        <div className="bg-base/80 backdrop-blur-sm sticky top-14 z-20">
+          <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
+        </div>
+
+        <main className="max-w-2xl mx-auto px-4 pb-32">
+
+          {/* Balance — total comes from server, no frontend arithmetic */}
+          <BalanceCounter total={monthTotal} pendingCount={pendingCount} />
+
+          {/* Empty state */}
+          {!loading && items.length === 0 && (
+              <div className="text-center py-20">
+                <div className="text-5xl mb-4 select-none">💸</div>
+                <p className="text-text-secondary font-medium">{t("noItemsForMonth")} {monthString}</p>
+                <p className="text-text-muted text-sm mt-1">{t("tapToAdd")}</p>
+              </div>
+          )}
+
+          {/* Loading */}
+          {loading && (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 size={20} className="animate-spin text-text-muted" />
+              </div>
+          )}
+
+          {/* Item list, organized by folder */}
+          {!loading && items.length > 0 && (
+              <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCorners}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDragEnd={handleDragEnd}
+              >
+                <SortableContext 
+                    items={
+                      activeType === "folder" 
+                        ? folderIds 
+                        : activeType === "item" 
+                          ? itemIds 
+                          : allSortableIds
+                    } 
+                    strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-5 mt-1">
+                    {folders.map((folder) => (
+                        <SortableFolder
+                            key={folder.id}
+                            folder={folder}
+                            items={itemsByFolder.get(folder.id) ?? []}
+                            total={folderTotals[folder.id] ?? 0}
+                            month={monthString}
+                            activeType={activeType}
+                            isCollapsed={collapsedFolderIds.has(folder.id)}
+                            onToggleCollapse={() => toggleFolderCollapse(folder.id)}
+                            onPay={handlePay}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            onUnpay={handleUnpay}
+                            onAmountSaved={handleAmountSaved}
+                            onEditFolder={(f) => { setEditFolder(f); setFolderModalOpen(true); }}
+                        />
+                    ))}
+
+                    {/* Unfiled items — no header */}
+                    <SortableFolder
+                        folder={null}
+                        items={itemsByFolder.get(null) ?? []}
+                        total={folderTotals["__unfiled__"] ?? 0}
+                        month={monthString}
+                        activeType={activeType}
+                        isCollapsed={false}
+                        onToggleCollapse={() => {}}
+                        onPay={handlePay}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onUnpay={handleUnpay}
+                        onAmountSaved={handleAmountSaved}
+                    />
+                  </div>
+                </SortableContext>
+
+                <DragOverlay adjustScale={false} dropAnimation={{
+                  sideEffects: defaultDropAnimationSideEffects({
+                    styles: { active: { opacity: "0.5" } },
+                  }),
+                }}>
+                  {activeId ? (
+                      activeType === "folder" ? (
+                          <FolderCardOverlay
+                              folder={folders.find((f) => f.id === activeId)!}
+                              total={folderTotals[activeId] ?? 0}
+                          />
+                      ) : (
+                          <ItemCardOverlay item={items.find((i) => i.id === activeId)!} />
+                      )
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+          )}
+        </main>
+
+        {/* Floating add button */}
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30">
+          <button
+              onClick={() => { setEditItem(null); setAddItemOpen(true); }}
+              className="flex items-center gap-2 bg-accent hover:bg-accent-light text-white text-sm font-semibold pl-4 pr-5 h-12 rounded-2xl shadow-lg shadow-accent/30 transition-all duration-150 active:scale-95"
+          >
+            <Plus size={18} strokeWidth={2.5} />
+            {t("addItem")}
+          </button>
+        </div>
+
+        {/* Modals */}
+
+        <AddItemModal
+            open={addItemOpen || !!editItem}
+            onClose={() => { setAddItemOpen(false); setEditItem(null); }}
+            groupId={activeGroup?.id ?? ""}
+            folders={folders}
+            defaultMonth={monthString}
+            editItem={editItem}
+            onCreated={handleItemCreated}
+            onUpdated={handleItemUpdated}
+        />
+
+        <PayItemModal
+            open={!!payItem}
+            onClose={() => setPayItem(null)}
+            item={payItem}
+            month={monthString}
+            accounts={accounts}
+            onConfirm={handlePayConfirm}
+        />
+
+        <DeleteConfirmModal
+            open={!!deleteItem}
+            onClose={() => setDeleteItem(null)}
+            item={deleteItem}
+            month={monthString}
+            onConfirm={handleDeleteConfirm}
+        />
+
+        <FolderPopup
+            open={folderModalOpen}
+            onClose={() => { setFolderModalOpen(false); setEditFolder(null); }}
+            groupId={activeGroup?.id ?? ""}
+            editFolder={editFolder}
+            onCreated={(f) => setFolders((prev) => [...prev, f])}
+            onUpdated={(f) => {
+              setFolders((prev) => prev.map((x) => x.id === f.id ? f : x));
+              fetchItems();
+            }}
+            onDeleted={(id) => {
+              setFolders((prev) => prev.filter((x) => x.id !== id));
+              fetchItems();
+            }}
+        />
+
+        <GroupModal
+            open={groupModal !== null}
+            onClose={() => setGroupModal(null)}
+            mode={groupModal ?? "create"}
+            activeGroup={activeGroup}
+            onCreated={(g) => { setGroups((prev) => [...prev, g]); setActiveGroup(g); }}
+            onGroupUpdated={(g) => {
+              setGroups((prev) => prev.map((x) => x.id === g.id ? g : x));
+              setActiveGroup(g);
+            }}
+        />
       </div>
-
-      <main className="max-w-2xl mx-auto px-4 pb-32">
-
-        {/* Balance — total comes from server, no frontend arithmetic */}
-        <BalanceCounter total={monthTotal} pendingCount={pendingCount} />
-
-        {/* Empty state */}
-        {!loading && items.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-5xl mb-4 select-none">💸</div>
-            <p className="text-text-secondary font-medium">{t("noItemsForMonth")} {monthString}</p>
-            <p className="text-text-muted text-sm mt-1">{t("tapToAdd")}</p>
-          </div>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 size={20} className="animate-spin text-text-muted" />
-          </div>
-        )}
-
-        {/* Item list, organized by folder */}
-        {!loading && items.length > 0 && (
-          <div className="space-y-5 mt-1">
-            {folders.map((folder) => (
-              <FolderSection
-                key={folder.id}
-                folder={folder}
-                items={itemsByFolder.get(folder.id) ?? []}
-                total={folderTotals[folder.id] ?? 0}
-                month={monthString}
-                onPay={handlePay}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onUnpay={handleUnpay}
-                onAmountSaved={handleAmountSaved}
-                onEditFolder={(f) => { setEditFolder(f); setFolderModalOpen(true); }}
-              />
-            ))}
-
-            {/* Unfiled items */}
-            {(itemsByFolder.get(null)?.length ?? 0) > 0 && (
-              <FolderSection
-                folder={null}
-                items={itemsByFolder.get(null) ?? []}
-                total={folderTotals["__unfiled__"] ?? 0}
-                month={monthString}
-                onPay={handlePay}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onUnpay={handleUnpay}
-                onAmountSaved={handleAmountSaved}
-              />
-            )}
-          </div>
-        )}
-      </main>
-
-      {/* Floating add button */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30">
-        <button
-          onClick={() => { setEditItem(null); setAddItemOpen(true); }}
-          className="flex items-center gap-2 bg-accent hover:bg-accent-light text-white text-sm font-semibold pl-4 pr-5 h-12 rounded-2xl shadow-lg shadow-accent/30 transition-all duration-150 active:scale-95"
-        >
-          <Plus size={18} strokeWidth={2.5} />
-          {t("addItem")}
-        </button>
-      </div>
-
-      {/* Modals */}
-
-      <AddItemModal
-        open={addItemOpen || !!editItem}
-        onClose={() => { setAddItemOpen(false); setEditItem(null); }}
-        groupId={activeGroup?.id ?? ""}
-        folders={folders}
-        defaultMonth={monthString}
-        editItem={editItem}
-        onCreated={handleItemCreated}
-        onUpdated={handleItemUpdated}
-      />
-
-      <PayItemModal
-        open={!!payItem}
-        onClose={() => setPayItem(null)}
-        item={payItem}
-        month={monthString}
-        accounts={accounts}
-        onConfirm={handlePayConfirm}
-      />
-
-      <DeleteConfirmModal
-        open={!!deleteItem}
-        onClose={() => setDeleteItem(null)}
-        item={deleteItem}
-        month={monthString}
-        onConfirm={handleDeleteConfirm}
-      />
-
-      <FolderModal
-        open={folderModalOpen}
-        onClose={() => { setFolderModalOpen(false); setEditFolder(null); }}
-        groupId={activeGroup?.id ?? ""}
-        folders={folders}
-        editFolder={editFolder}
-        onCreated={(f) => setFolders((prev) => [...prev, f])}
-        onUpdated={(f) => setFolders((prev) => prev.map((x) => x.id === f.id ? f : x))}
-        onDeleted={(id) => { setFolders((prev) => prev.filter((x) => x.id !== id)); fetchItems(); }}
-      />
-
-      <GroupModal
-        open={groupModal !== null}
-        onClose={() => setGroupModal(null)}
-        mode={groupModal ?? "create"}
-        activeGroup={activeGroup}
-        onCreated={(g) => { setGroups((prev) => [...prev, g]); setActiveGroup(g); }}
-        onGroupUpdated={(g) => {
-          setGroups((prev) => prev.map((x) => x.id === g.id ? g : x));
-          setActiveGroup(g);
-        }}
-      />
-    </div>
   );
 }

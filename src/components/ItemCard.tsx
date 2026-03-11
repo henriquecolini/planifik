@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, MoreHorizontal, RotateCcw, Trash2, Pencil } from "lucide-react";
+import { Check, GripVertical, MoreHorizontal, RotateCcw, Trash2, Pencil } from "lucide-react";
 import { cn, formatCurrency, getDueDateForMonth, dueDateInfo } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { BankIcon, ItemIcon } from "./Icons";
@@ -16,10 +16,14 @@ interface ItemCardProps {
   onDelete: (item: Item) => void;
   onUnpay: (item: Item) => void;
   onAmountSaved: (item: Item) => void;
+  dragHandleListeners?: Record<string, unknown>;
+  dragHandleAttributes?: Record<string, unknown>;
+  isDragging?: boolean;
 }
 
 export function ItemCard({
   item, month, onPay, onEdit, onDelete, onUnpay, onAmountSaved,
+  dragHandleListeners, dragHandleAttributes, isDragging,
 }: ItemCardProps) {
   const { t } = useI18n();
 
@@ -90,7 +94,8 @@ export function ItemCard({
 
   return (
     <div className={cn(
-      "group relative flex items-center gap-3 px-3.5 py-3 rounded-xl border transition-all duration-150",
+      "group relative flex items-center gap-3 pl-2.5 pr-3.5 py-3 rounded-xl border transition-all duration-150",
+      isDragging ? "border-accent shadow-lg opacity-80 ring-1 ring-accent/30 bg-white" :
       isPaid
         ? "bg-gray-50 border-border-subtle item-paid"
         : "bg-white border-border-subtle hover:border-border-default hover:shadow-sm",
@@ -101,6 +106,15 @@ export function ItemCard({
         "absolute left-0 top-3 bottom-3 w-0.5 rounded-full transition-opacity",
         isPaid ? "opacity-0" : effectivelyPositive ? "bg-income" : "bg-bill",
       )} />
+
+      {/* Drag handle */}
+      <div
+          {...dragHandleListeners}
+          {...dragHandleAttributes}
+          className="flex-shrink-0 text-text-muted hover:text-text-secondary cursor-grab active:cursor-grabbing p-0.5 -ml-1 rounded transition-colors group-hover:opacity-100 opacity-0"
+      >
+        <GripVertical size={14} />
+      </div>
 
       {/* Icon — pointer-events-none so it feels like an image, not selectable text */}
       <div className="select-none pointer-events-none flex-shrink-0">
@@ -229,5 +243,32 @@ export function ItemCard({
         )}
       </div>
     </div>
+  );
+}
+
+export function ItemCardOverlay({ item }: { item: Item }) {
+  const rawBalance = item.balance ?? 0;
+  const effectivelyPositive =
+      item.type === "INCOME"   ? true  :
+      item.type === "BILL"     ? false :
+      item.type === "CREDIT_CARD" ? false :
+      rawBalance >= 0;
+
+  const signChar = effectivelyPositive ? "+" : "−";
+
+  return (
+      <div className="flex items-center gap-3 px-3 py-3 rounded-xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90">
+        <GripVertical size={14} className="text-text-muted flex-shrink-0" />
+        <div className="w-8 h-8 rounded-lg bg-elevated flex items-center justify-center text-lg flex-shrink-0">
+          <ItemIcon type={item.type} icon={item.icon} bank={item.bank} />
+        </div>
+        <span className="flex-1 text-sm font-medium text-text-primary truncate">{item.title}</span>
+        <span className={cn(
+            "text-sm font-semibold tabular-nums flex-shrink-0",
+            effectivelyPositive ? "text-income" : "text-bill"
+        )}>
+        {signChar}{formatCurrency(Math.abs(rawBalance))}
+      </span>
+      </div>
   );
 }

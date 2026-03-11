@@ -124,6 +124,7 @@ const translations = {
   deleteAll:           { en: "Delete completely",         "pt-BR": "Excluir completamente" },
   deleteAllDesc:       { en: "Remove from all months",    "pt-BR": "Remover de todos os meses" },
   deleteOneTime:       { en: "This is a one-time item and will be permanently removed.", "pt-BR": "Este é um item único e será removido permanentemente." },
+  deleteFolder:        { en: "Delete folder",             "pt-BR": "Excluir pasta" },
 
   // ── Folders ───────────────────────────────────────────────────────────────
   folders:             { en: "Folders",                   "pt-BR": "Pastas" },

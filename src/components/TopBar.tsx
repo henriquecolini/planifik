@@ -12,12 +12,12 @@ interface TopBarProps {
   groups: Group[];
   activeGroup: Group | null;
   onGroupChange: (group: Group) => void;
-  onOpenFolders: () => void;
+  onCreateFolder: () => void;
   onCreateGroup: () => void;
   onManageGroup: () => void;
 }
 
-export function TopBar({ groups, activeGroup, onGroupChange, onOpenFolders, onCreateGroup, onManageGroup }: TopBarProps) {
+export function TopBar({ groups, activeGroup, onGroupChange, onCreateFolder, onCreateGroup, onManageGroup }: TopBarProps) {
   const { data: session } = useSession();
   const { t, lang, setLang } = useI18n();
   const user = session?.user;
@@ -123,9 +123,9 @@ export function TopBar({ groups, activeGroup, onGroupChange, onOpenFolders, onCr
         </div>
 
         {/* ── Folders ── */}
-        <button onClick={onOpenFolders}
+        <button onClick={onCreateFolder}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-elevated transition-colors flex-shrink-0"
-          title={t("manageFolders")}>
+          title={t("newFolder")}>
           <FolderPlus size={16} />
         </button>
 
