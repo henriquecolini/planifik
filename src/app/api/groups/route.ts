@@ -1,0 +1,57 @@
+// GET  /api/groups — list all groups the current user belongs to
+// POST /api/groups — create a new group
+
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const userId = (session.user as typeof session.user & { id: string }).id;
+
+  const memberships = await prisma.groupMember.findMany({
+    where: { userId },
+    include: {
+      group: {
+        include: {
+          members: {
+            include: { user: { select: { id: true, name: true, email: true, image: true } } },
+          },
+        },
+      },
+    },
+    orderBy: { joinedAt: "asc" },
+  });
+
+  const groups = memberships.map((m) => ({ ...m.group, role: m.role }));
+  return NextResponse.json(groups);
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const userId = (session.user as typeof session.user & { id: string }).id;
+  const { name } = await req.json();
+
+  if (!name?.trim()) {
+    return NextResponse.json({ error: "Group name is required" }, { status: 400 });
+  }
+
+  const group = await prisma.group.create({
+    data: {
+      name: name.trim(),
+      members: { create: { userId, role: "owner" } },
+    },
+    include: {
+      members: {
+        include: { user: { select: { id: true, name: true, email: true, image: true } } },
+      },
+    },
+  });
+
+  return NextResponse.json(group, { status: 201 });
+}
