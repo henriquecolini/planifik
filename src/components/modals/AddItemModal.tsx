@@ -324,6 +324,21 @@ function AddItemModal({
               {t("titleField")}
             </label>
             <div className="flex gap-2">
+              {/* Title input */}
+              <input
+                ref={titleRef}
+                type="text"
+                placeholder={
+                  isAccountType(type) ? t("titlePlaceholderAcc") : t("titlePlaceholderBill")
+                }
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSubmit();
+                }}
+                className="flex-1 bg-white border border-border-default rounded-lg text-sm text-text-primary placeholder:text-text-muted px-3 py-2 outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
+              />
+
               {/* Icon / bank button */}
               <div className="relative">
                 <button
@@ -409,21 +424,6 @@ function AddItemModal({
                   </>
                 )}
               </div>
-
-              {/* Title input */}
-              <input
-                ref={titleRef}
-                type="text"
-                placeholder={
-                  isAccountType(type) ? t("titlePlaceholderAcc") : t("titlePlaceholderBill")
-                }
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSubmit();
-                }}
-                className="flex-1 bg-white border border-border-default rounded-lg text-sm text-text-primary placeholder:text-text-muted px-3 py-2 outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
-              />
             </div>
           </div>
           {/* ── Amount (CentsInput) ── */}

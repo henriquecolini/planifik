@@ -101,7 +101,7 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }: M
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto">{children}</div>
+        <div className="px-5 py-4 space-y-4 max-h-[75vh]">{children}</div>
 
         {/* Footer */}
         {footer && (
