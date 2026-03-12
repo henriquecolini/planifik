@@ -41,6 +41,7 @@ import { MonthSelector } from "./MonthSelector";
 import { BalanceCounter } from "./BalanceCounter";
 import AddItemModal from "./modals/AddItemModal";
 import { PayItemModal } from "./modals/PayItemModal";
+import { UnpayModal } from "./modals/UnpayModal";
 import { DeleteConfirmModal } from "./modals/DeleteConfirmModal";
 import { FolderPopup } from "./FolderPopup";
 import { GroupModal } from "./modals/GroupModal";
@@ -53,7 +54,7 @@ import { useI18n } from "@/lib/i18n";
 import type { DeleteMode, Folder, Group, Item, ItemsApiResponse, PaymentMethod } from "@/types";
 
 export function DashboardClient() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const { t } = useI18n();
 
@@ -90,7 +91,7 @@ export function DashboardClient() {
 
   // We use this to temporarily store the folders/items when a drag starts,
   // to prevent weird resets or to handle constraints better if needed.
-  const [dragStartFolders, setDragStartFolders] = useState<Folder[]>([]);
+  const [_, setDragStartFolders] = useState<Folder[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -101,6 +102,7 @@ export function DashboardClient() {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [editItem, setEditItem] = useState<Item | null>(null);
   const [payItem, setPayItem] = useState<Item | null>(null);
+  const [unpayItem, setUnpayItem] = useState<Item | null>(null);
   const [deleteItem, setDeleteItem] = useState<Item | null>(null);
   const [folderModalOpen, setFolderModalOpen] = useState(false);
   const [editFolder, setEditFolder] = useState<Folder | null>(null);
@@ -204,10 +206,6 @@ export function DashboardClient() {
     return ids;
   }, [items]);
 
-  // Track the original order for fallback/validation if needed
-  const [initialFolders] = useState(folders);
-  const [initialItems] = useState(items);
-
   // ── Event handlers ─────────────────────────────────────────────────────────
 
   const handlePay = useCallback((item: Item) => setPayItem(item), []);
@@ -216,11 +214,29 @@ export function DashboardClient() {
 
   const handleUnpay = useCallback(
     async (item: Item) => {
-      await fetch(`/api/items/${item.id}/pay?month=${monthString}`, { method: "DELETE" });
-      // Refetch so server recomputes totals
-      fetchItems(true);
+      const paymentAccountItem = (item as any).event?.paymentAccountItem;
+      if (paymentAccountItem) {
+        setUnpayItem(item);
+      } else {
+        await fetch(`/api/items/${item.id}/pay?month=${monthString}&rollback=false`, {
+          method: "DELETE",
+        });
+        await fetchItems(true);
+      }
     },
     [monthString, fetchItems],
+  );
+
+  const handleUnpayConfirm = useCallback(
+    async (rollback: boolean) => {
+      if (!unpayItem) return;
+      await fetch(`/api/items/${unpayItem.id}/pay?month=${monthString}&rollback=${rollback}`, {
+        method: "DELETE",
+      });
+      setUnpayItem(null);
+      await fetchItems(true);
+    },
+    [unpayItem, monthString, fetchItems],
   );
 
   const handleAmountSaved = useCallback(
@@ -570,6 +586,13 @@ export function DashboardClient() {
         item={deleteItem}
         month={monthString}
         onConfirm={handleDeleteConfirm}
+      />
+
+      <UnpayModal
+        open={!!unpayItem}
+        onClose={() => setUnpayItem(null)}
+        item={unpayItem}
+        onConfirm={handleUnpayConfirm}
       />
 
       <FolderPopup

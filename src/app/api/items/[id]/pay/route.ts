@@ -90,9 +90,51 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const month = req.nextUrl.searchParams.get("month");
   if (!month) return NextResponse.json({ error: "month is required" }, { status: 400 });
 
+  const rollback = req.nextUrl.searchParams.get("rollback") === "true";
+
   const userId = session?.user?.id;
   const item = await authorize(params.id, userId, month);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (rollback) {
+    const event = await prisma.itemEvent.findUnique({
+      where: { itemId_month: { itemId: params.id, month } },
+    });
+
+    if (event?.paymentItemId) {
+      const accountItem = await prisma.item.findUnique({
+        where: { id: event.paymentItemId, type: { in: ["CHECKING_ACCOUNT", "CREDIT_CARD"] } },
+        include: {
+          balances: { where: { month } },
+          events: { where: { month } },
+          exceptions: { where: { month } },
+        },
+      });
+
+      const isDeletedForMonth = (accountItem?.exceptions.length ?? 0) > 0;
+      const isPaid = (accountItem?.events.length ?? 0) > 0;
+
+      if (accountItem && !isDeletedForMonth && !isPaid) {
+        const accountBalance =
+          accountItem.balances[0]?.amount ?? accountItem.defaultAmount ?? new Decimal(0);
+        const itemBalance = item.balances[0]?.amount ?? item.defaultAmount ?? new Decimal(0);
+
+        const newBalance = accountBalance.minus(itemBalance);
+
+        await prisma.itemBalance.upsert({
+          where: { itemId_month: { itemId: event.paymentItemId, month } },
+          create: {
+            itemId: event.paymentItemId,
+            month,
+            amount: newBalance,
+          },
+          update: {
+            amount: newBalance,
+          },
+        });
+      }
+    }
+  }
 
   await prisma.itemEvent.deleteMany({
     where: { itemId: params.id, month },

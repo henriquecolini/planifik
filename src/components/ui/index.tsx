@@ -210,7 +210,7 @@ export function Select({ label, error, options, className, id, ...props }: Selec
 interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  label: string;
+  label?: string;
   description?: string;
 }
 
@@ -234,7 +234,7 @@ export function Toggle({ checked, onChange, label, description }: ToggleProps) {
         />
       </button>
       <span>
-        <span className="block text-sm text-text-primary">{label}</span>
+        {label && <span className="block text-sm text-text-primary">{label}</span>}
         {description && <span className="block text-xs text-text-muted mt-0.5">{description}</span>}
       </span>
     </label>

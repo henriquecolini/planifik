@@ -137,6 +137,20 @@ const translations = {
   cashNotSpecified: { en: "Cash / Not specified", "pt-BR": "Dinheiro / Não especificado" },
   addToBalance: { en: "Add to account balance", "pt-BR": "Adicionar ao saldo da conta" },
   deductFromBalance: { en: "Deduct from account balance", "pt-BR": "Deduzir do saldo da conta" },
+  unpayTitle: { en: "Undo Payment", "pt-BR": "Desfazer Pagamento" },
+  unpayConfirm: {
+    en: "Are you sure you want to mark this item as unpaid?",
+    "pt-BR": "Tem certeza que deseja desmarcar este item?",
+  },
+  rollbackBalance: {
+    en: "Rollback balance deduction from {account}?",
+    "pt-BR": "Estornar a dedução do saldo de {account}?",
+  },
+  rollbackIncome: {
+    en: "Rollback deposit into {account}?",
+    "pt-BR": "Estornar o depósito em {account}?",
+  },
+  confirm: { en: "Confirm", "pt-BR": "Confirmar" },
 
   // ── Delete modal ──────────────────────────────────────────────────────────
   deleteItem: { en: "Delete item", "pt-BR": "Excluir item" },

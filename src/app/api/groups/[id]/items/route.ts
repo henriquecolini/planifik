@@ -8,7 +8,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
-import type { ItemType } from "@/types";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -46,16 +45,49 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 
   // Strip internal relation arrays, attach computed fields
-  const items = rawItems
-    .filter((item) => item.exceptions.length === 0)
-    .map(({ events, exceptions, balances, ...item }) => ({
-      ...item,
-      defaultAmount: item.defaultAmount,
-      isPaid: events.length > 0,
-      event: events[0] ?? null,
-      monthBalance: balances[0]?.amount,
-      balance: balances[0]?.amount ?? item.defaultAmount ?? 0,
-    }));
+  const items = await Promise.all(
+    rawItems
+      .filter((item) => item.exceptions.length === 0)
+      .map(async ({ events, exceptions, balances, ...item }) => {
+        let paymentAccountItem = null;
+        const event = events[0] ?? null;
+
+        if (event?.paymentItemId) {
+          const accountItem = await prisma.item.findUnique({
+            where: { id: event.paymentItemId, type: { in: ["CHECKING_ACCOUNT", "CREDIT_CARD"] } },
+            include: {
+              events: { where: { month } },
+              exceptions: { where: { month } },
+            },
+          });
+
+          const isDeletedForMonth = accountItem?.exceptions.length ?? 0 > 0;
+          const isPaid = accountItem?.events.length ?? 0 > 0;
+
+          if (accountItem && !isDeletedForMonth && !isPaid) {
+            paymentAccountItem = {
+              id: accountItem.id,
+              title: accountItem.title,
+              type: accountItem.type,
+            };
+          }
+        }
+
+        return {
+          ...item,
+          defaultAmount: item.defaultAmount,
+          isPaid: events.length > 0,
+          event: event
+            ? {
+                ...event,
+                paymentAccountItem,
+              }
+            : null,
+          monthBalance: balances[0]?.amount,
+          balance: balances[0]?.amount ?? item.defaultAmount ?? new Decimal(0),
+        };
+      }),
+  );
 
   // ── Compute totals with Decimal arithmetic (server-side) ──────────────────
   // Each unpaid item contributes to monthTotal and its folder's total.

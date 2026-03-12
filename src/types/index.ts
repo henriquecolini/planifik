@@ -96,6 +96,11 @@ export interface ItemEvent {
   paymentMethod: string | null;
   paymentItemId: string | null;
   createdAt: string;
+  paymentAccountItem?: {
+    id: string;
+    title: string;
+    type: string;
+  } | null;
 }
 
 // ─── API Response Types ────────────────────────────────────────────────────────
@@ -166,6 +171,7 @@ export interface PayItemRequest {
   month: string;
   paymentMethod?: PaymentMethod;
   paymentItemId?: string;
+  rollback?: boolean;
 }
 
 export interface DeleteItemRequest {
