@@ -25,9 +25,9 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     // Expose the user id in the session so we don't have to query by email
-    async session({ session, user }) {
+    async session({ session, user, token }) {
       if (session.user) {
-        session.user.id = user.id;
+        session.user.id = user?.id ?? token?.sub;
       }
       return session;
     },
