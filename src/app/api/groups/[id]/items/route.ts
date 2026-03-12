@@ -23,7 +23,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const month = req.nextUrl.searchParams.get("month");
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-    return NextResponse.json({ error: "Invalid or missing month parameter (YYYY-MM)" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid or missing month parameter (YYYY-MM)" },
+      { status: 400 },
+    );
   }
 
   const rawItems = await prisma.item.findMany({
@@ -33,11 +36,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       OR: [{ endMonth: null }, { endMonth: { gte: month } }],
     },
     include: {
-      user:       { select: { id: true, name: true, email: true, image: true } },
-      folder:     true,
-      events:     { where: { month } },
+      user: { select: { id: true, name: true, email: true, image: true } },
+      folder: true,
+      events: { where: { month } },
       exceptions: { where: { month } },
-      balances:   { where: { month } },
+      balances: { where: { month } },
     },
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
   });
@@ -48,8 +51,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .map(({ events, exceptions, balances, ...item }) => ({
       ...item,
       defaultAmount: item.defaultAmount ? new Decimal(item.defaultAmount).toNumber() : null,
-      isPaid:  events.length > 0,
-      event:   events[0] ?? null,
+      isPaid: events.length > 0,
+      event: events[0] ?? null,
       monthBalance: balances[0]?.amount != null ? new Decimal(balances[0].amount).toNumber() : null,
       balance: new Decimal(balances[0]?.amount ?? item.defaultAmount ?? 0).toNumber(),
     }));
@@ -79,9 +82,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   return NextResponse.json({
     items,
-    monthTotal:   monthTotal.toNumber(),
+    monthTotal: monthTotal.toNumber(),
     folderTotals: Object.fromEntries(
-      Object.entries(folderTotals).map(([k, v]) => [k, v.toNumber()])
+      Object.entries(folderTotals).map(([k, v]) => [k, v.toNumber()]),
     ),
   });
 }
@@ -89,10 +92,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 /** Returns the signed contribution of one item to the period total. */
 function itemContribution(type: ItemType, balance: Decimal): Decimal {
   switch (type) {
-    case "INCOME":           return balance.abs();
-    case "BILL":             return balance.abs().negated();
-    case "CREDIT_CARD":      return balance.abs().negated();
-    case "CHECKING_ACCOUNT": return balance; // sign is meaningful
-    default:                 return new Decimal(0);
+    case "INCOME":
+      return balance.abs();
+    case "BILL":
+      return balance.abs().negated();
+    case "CREDIT_CARD":
+      return balance.abs().negated();
+    case "CHECKING_ACCOUNT":
+      return balance; // sign is meaningful
+    default:
+      return new Decimal(0);
   }
 }

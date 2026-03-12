@@ -2,31 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-:root { color-scheme: light; }
+:root {
+  color-scheme: light;
+}
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
 /* Inter font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
 
 /* Selection */
-::selection { background: #DBEAFE; color: #1E40AF; }
+::selection {
+  background: #dbeafe;
+  color: #1e40af;
+}
 
 /* Focus */
 :focus-visible {
-  outline: 2px solid #2563EB;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -34,14 +57,17 @@ html, body {
 /* Paid items — strikethrough */
 .item-paid .item-title {
   position: relative;
-  color: #9CA3AF;
+  color: #9ca3af;
 }
+
 .item-paid .item-title::after {
   content: "";
   position: absolute;
-  left: 0; right: 0; top: 50%;
+  left: 0;
+  right: 0;
+  top: 50%;
   height: 1px;
-  background: #9CA3AF;
+  background: #9ca3af;
 }
 
 /* Tabular numbers for balances */
@@ -57,4 +83,6 @@ html, body {
   -webkit-backdrop-filter: blur(4px);
 }
 
-.no-select { user-select: none; }
+.no-select {
+  user-select: none;
+}

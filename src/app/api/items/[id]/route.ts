@@ -7,7 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { addMonths, fromMonthString, toMonthString } from "@/lib/utils";
-import type { UpdateItemRequest, DeleteMode } from "@/types";
+import type { DeleteMode, UpdateItemRequest } from "@/types";
 
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -68,19 +68,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const updated = await prisma.item.update({
     where: { id: params.id },
     data: {
-      ...(body.folderId   !== undefined && { folderId:       body.folderId }),
-      ...(body.title      !== undefined && { title:          body.title.trim() }),
-      ...(body.icon       !== undefined && { icon:           body.icon }),
-      ...(body.bank       !== undefined && { bank:           body.bank }),
-      ...(body.startMonth !== undefined && { startMonth:     body.startMonth }),
-      ...(body.endMonth   !== undefined && { endMonth:       body.endMonth }),
-      ...(body.dueDay     !== undefined && { dueDay:         body.dueDay }),
+      ...(body.folderId !== undefined && { folderId: body.folderId }),
+      ...(body.title !== undefined && { title: body.title.trim() }),
+      ...(body.icon !== undefined && { icon: body.icon }),
+      ...(body.bank !== undefined && { bank: body.bank }),
+      ...(body.startMonth !== undefined && { startMonth: body.startMonth }),
+      ...(body.endMonth !== undefined && { endMonth: body.endMonth }),
+      ...(body.dueDay !== undefined && { dueDay: body.dueDay }),
       ...(body.dueNextMonth !== undefined && { dueNextMonth: body.dueNextMonth }),
-      ...(body.dueDate    !== undefined && { dueDate:        body.dueDate ? new Date(body.dueDate) : null }),
-      ...(body.defaultAmount !== undefined && { defaultAmount: body.defaultAmount !== null ? new Decimal(body.defaultAmount) : null }),
+      ...(body.dueDate !== undefined && { dueDate: body.dueDate ? new Date(body.dueDate) : null }),
+      ...(body.defaultAmount !== undefined && {
+        defaultAmount: body.defaultAmount !== null ? new Decimal(body.defaultAmount) : null,
+      }),
     },
     include: {
-      user:   { select: { id: true, name: true, email: true, image: true } },
+      user: { select: { id: true, name: true, email: true, image: true } },
       folder: true,
       balances: body.month ? { where: { month: body.month } } : undefined,
     },
@@ -89,7 +91,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const response = {
     ...updated,
     defaultAmount: updated.defaultAmount ? new Decimal(updated.defaultAmount).toNumber() : null,
-    monthBalance: updated.balances?.[0]?.amount != null ? new Decimal(updated.balances[0].amount).toNumber() : null,
+    monthBalance:
+      updated.balances?.[0]?.amount != null
+        ? new Decimal(updated.balances[0].amount).toNumber()
+        : null,
     balance: new Decimal(updated.balances?.[0]?.amount ?? updated.defaultAmount ?? 0).toNumber(),
   };
   delete (response as any).balances;
@@ -105,22 +110,20 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const existing = await authorize(params.id, userId);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const mode  = (req.nextUrl.searchParams.get("mode") ?? "all") as DeleteMode;
+  const mode = (req.nextUrl.searchParams.get("mode") ?? "all") as DeleteMode;
   const month = req.nextUrl.searchParams.get("month"); // "YYYY-MM"
 
   if (mode === "all") {
     // Hard delete — removes the item and all its events/exceptions via cascade
     await prisma.item.delete({ where: { id: params.id } });
-
   } else if (mode === "this") {
     // Skip just this month: create an exception record
     if (!month) return NextResponse.json({ error: "month required" }, { status: 400 });
     await prisma.itemException.upsert({
-      where:  { itemId_month: { itemId: params.id, month } },
+      where: { itemId_month: { itemId: params.id, month } },
       create: { itemId: params.id, month },
       update: {},
     });
-
   } else if (mode === "following") {
     // Terminate the item at the month before `month`
     if (!month) return NextResponse.json({ error: "month required" }, { status: 400 });
@@ -132,7 +135,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     } else {
       await prisma.item.update({
         where: { id: params.id },
-        data:  { endMonth: prevMonth },
+        data: { endMonth: prevMonth },
       });
     }
   }

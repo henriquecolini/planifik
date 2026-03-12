@@ -12,9 +12,9 @@ import { Decimal } from "@prisma/client/runtime/library";
 async function authorize(itemId: string, userId: string) {
   const item = await prisma.item.findUnique({
     where: { id: itemId },
-    include: { 
+    include: {
       group: { include: { members: true } },
-      balances: true // We'll need the balance for the month being paid
+      balances: true, // We'll need the balance for the month being paid
     },
   });
   if (!item) return null;
@@ -38,19 +38,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Create (or upsert) the event record
   const event = await prisma.itemEvent.upsert({
-    where:  { itemId_month: { itemId: params.id, month: body.month } },
+    where: { itemId_month: { itemId: params.id, month: body.month } },
     create: {
-      itemId:         params.id,
+      itemId: params.id,
       userId,
-      month:          body.month,
+      month: body.month,
       actionType,
-      paymentMethod:  body.paymentMethod ?? null,
-      paymentItemId:  body.paymentItemId ?? null,
+      paymentMethod: body.paymentMethod ?? null,
+      paymentItemId: body.paymentItemId ?? null,
       balanceDeducted: body.deductBalance ?? false,
     },
     update: {
-      paymentMethod:  body.paymentMethod ?? null,
-      paymentItemId:  body.paymentItemId ?? null,
+      paymentMethod: body.paymentMethod ?? null,
+      paymentItemId: body.paymentItemId ?? null,
       balanceDeducted: body.deductBalance ?? false,
     },
   });
@@ -59,13 +59,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (body.paymentItemId && body.deductBalance) {
     const accountItem = await prisma.item.findUnique({
       where: { id: body.paymentItemId },
-      include: { balances: { where: { month: body.month } } }
+      include: { balances: { where: { month: body.month } } },
     });
     if (accountItem) {
       const currentBal = new Decimal(Number(accountItem.balances[0]?.amount ?? 0));
       let newBalance: Decimal;
 
-      const itemBalance = item.balances.find(b => b.month === body.month);
+      const itemBalance = item.balances.find((b) => b.month === body.month);
       const itemAmount = new Decimal(Number(itemBalance?.amount ?? 0)).abs();
 
       if (item.type === "INCOME" && accountItem.type === "CHECKING_ACCOUNT") {
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         },
         update: {
           amount: newBalance,
-        }
+        },
       });
     }
   }

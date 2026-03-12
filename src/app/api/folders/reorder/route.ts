@@ -34,8 +34,8 @@ export async function PATCH(req: NextRequest) {
       prisma.folder.update({
         where: { id },
         data: { position: index },
-      })
-    )
+      }),
+    ),
   );
 
   return NextResponse.json({ ok: true });

@@ -22,35 +22,44 @@ export async function POST(req: NextRequest) {
   if (!member) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   // Validate required fields
-  if (!body.title?.trim())   return NextResponse.json({ error: "Title is required" }, { status: 400 });
-  if (!body.type)             return NextResponse.json({ error: "Type is required" }, { status: 400 });
-  if (body.amount === undefined) return NextResponse.json({ error: "Amount is required" }, { status: 400 });
-  if (!body.startMonth)      return NextResponse.json({ error: "Start month is required" }, { status: 400 });
+  if (!body.title?.trim())
+    return NextResponse.json({ error: "Title is required" }, { status: 400 });
+  if (!body.type) return NextResponse.json({ error: "Type is required" }, { status: 400 });
+  if (body.amount === undefined)
+    return NextResponse.json({ error: "Amount is required" }, { status: 400 });
+  if (!body.startMonth)
+    return NextResponse.json({ error: "Start month is required" }, { status: 400 });
 
   const item = await prisma.item.create({
     data: {
-      groupId:        body.groupId,
-      folderId:       body.folderId ?? null,
+      groupId: body.groupId,
+      folderId: body.folderId ?? null,
       userId,
-      title:          body.title.trim(),
-      type:           body.type,
-      icon:           body.icon ?? "💰",
-      bank:           body.bank ?? null,
-      startMonth:     body.startMonth,
-      endMonth:       body.endMonth ?? null,
-      dueDay:         body.dueDay ?? null,
-      dueNextMonth:   body.dueNextMonth ?? false,
-      dueDate:        body.dueDate ? new Date(body.dueDate) : null,
-      defaultAmount:  body.defaultAmount !== undefined && body.defaultAmount !== null ? new Decimal(body.defaultAmount) : null,
-      balances: body.defaultAmount !== undefined && body.defaultAmount !== null ? undefined : {
-        create: {
-          month: body.month ?? body.startMonth,
-          amount: new Decimal(body.monthlyBalance ?? body.amount ?? 0),
-        },
-      },
+      title: body.title.trim(),
+      type: body.type,
+      icon: body.icon ?? "💰",
+      bank: body.bank ?? null,
+      startMonth: body.startMonth,
+      endMonth: body.endMonth ?? null,
+      dueDay: body.dueDay ?? null,
+      dueNextMonth: body.dueNextMonth ?? false,
+      dueDate: body.dueDate ? new Date(body.dueDate) : null,
+      defaultAmount:
+        body.defaultAmount !== undefined && body.defaultAmount !== null
+          ? new Decimal(body.defaultAmount)
+          : null,
+      balances:
+        body.defaultAmount !== undefined && body.defaultAmount !== null
+          ? undefined
+          : {
+              create: {
+                month: body.month ?? body.startMonth,
+                amount: new Decimal(body.monthlyBalance ?? body.amount ?? 0),
+              },
+            },
     },
     include: {
-      user:   { select: { id: true, name: true, email: true, image: true } },
+      user: { select: { id: true, name: true, email: true, image: true } },
       folder: true,
       balances: { where: { month: body.month ?? body.startMonth } },
     },
@@ -59,7 +68,8 @@ export async function POST(req: NextRequest) {
   const response = {
     ...item,
     defaultAmount: item.defaultAmount ? new Decimal(item.defaultAmount).toNumber() : null,
-    monthBalance: item.balances[0]?.amount != null ? new Decimal(item.balances[0].amount).toNumber() : null,
+    monthBalance:
+      item.balances[0]?.amount != null ? new Decimal(item.balances[0].amount).toNumber() : null,
     balance: new Decimal(item.balances[0]?.amount ?? item.defaultAmount ?? 0).toNumber(),
   };
   delete (response as any).balances;

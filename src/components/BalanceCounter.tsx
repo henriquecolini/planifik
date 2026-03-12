@@ -16,25 +16,27 @@ export function BalanceCounter({ total, pendingCount }: BalanceCounterProps) {
 
   // Animated counter — interpolates from previous value to new value
   const [displayed, setDisplayed] = useState(total);
-  const rafRef  = useRef<number>();
+  const rafRef = useRef<number>();
   const prevRef = useRef(total);
 
   useEffect(() => {
-    const start  = prevRef.current;
-    const end    = total;
-    const dur    = 350;
+    const start = prevRef.current;
+    const end = total;
+    const dur = 350;
     const startT = performance.now();
 
     const tick = (now: number) => {
       const progress = Math.min((now - startT) / dur, 1);
-      const eased    = 1 - Math.pow(1 - progress, 3);
+      const eased = 1 - Math.pow(1 - progress, 3);
       setDisplayed(start + (end - start) * eased);
       if (progress < 1) rafRef.current = requestAnimationFrame(tick);
       else prevRef.current = end;
     };
 
     rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, [total]);
 
   const isPositive = displayed >= 0;
@@ -44,10 +46,12 @@ export function BalanceCounter({ total, pendingCount }: BalanceCounterProps) {
       <p className="text-xs font-medium text-text-muted uppercase tracking-widest mb-1">
         {t("netBalance")}
       </p>
-      <div className={cn(
-        "balance-value text-4xl font-bold tracking-tight",
-        isPositive ? "text-income" : "text-bill",
-      )}>
+      <div
+        className={cn(
+          "balance-value text-4xl font-bold tracking-tight",
+          isPositive ? "text-income" : "text-bill",
+        )}
+      >
         {isPositive ? "+" : "−"}&nbsp;{formatCurrency(Math.abs(displayed))}
       </div>
       {pendingCount > 0 && (

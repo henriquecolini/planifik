@@ -44,10 +44,10 @@ export async function PATCH(req: NextRequest) {
     // So if item A is before item B, it should be everywhere.
     // Setting explicit positions 0, 1, 2... for the items we have is better than nothing.
     for (let i = 0; i < itemIds.length; i++) {
-        await tx.item.update({
-            where: { id: itemIds[i] },
-            data: { position: i },
-        });
+      await tx.item.update({
+        where: { id: itemIds[i] },
+        data: { position: i },
+      });
     }
   });
 

@@ -16,14 +16,7 @@ interface SortableItemProps {
 }
 
 export function SortableItem(props: SortableItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.item.id,
     data: {
       type: "item",

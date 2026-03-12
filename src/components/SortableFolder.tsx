@@ -22,14 +22,7 @@ interface SortableFolderProps {
 }
 
 export function SortableFolder(props: SortableFolderProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.folder?.id ?? "unfiled",
     // Folders are ALWAYS disabled for sorting IF an item is being dragged.
     // This ensures items CANNOT displace folders.

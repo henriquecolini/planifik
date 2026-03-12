@@ -53,7 +53,7 @@ export function CentsInput({
   className,
   autoFocus = false,
 }: CentsInputProps) {
-  const [cents,    setCents]    = useState(() => Math.round(Math.abs(initialValue) * 100));
+  const [cents, setCents] = useState(() => Math.round(Math.abs(initialValue) * 100));
   const [negative, setNegative] = useState(allowNegative && initialValue < 0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -82,27 +82,22 @@ export function CentsInput({
       const newCents = Math.min(cents * 10 + parseInt(e.key, 10), MAX_CENTS);
       setCents(newCents);
       onChange?.(toReais(newCents, negative));
-
     } else if (e.key === "Backspace") {
       e.preventDefault();
       const newCents = Math.floor(cents / 10);
       setCents(newCents);
       onChange?.(toReais(newCents, negative));
-
     } else if ((e.key === "-" || e.key === "Subtract") && allowNegative) {
       e.preventDefault();
       const newNeg = !negative;
       setNegative(newNeg);
       onChange?.(toReais(cents, newNeg));
-
     } else if (e.key === "Enter") {
       e.preventDefault();
       onCommit?.(toReais(cents, negative));
-
     } else if (e.key === "Escape") {
       e.preventDefault();
       onCancel?.();
-
     } else {
       // Block all other keys (letters, dots, commas, etc.)
       e.preventDefault();
@@ -113,7 +108,7 @@ export function CentsInput({
     <input
       ref={inputRef}
       type="text"
-      inputMode="none"   // prevents mobile keyboard from appearing; we handle input ourselves
+      inputMode="none" // prevents mobile keyboard from appearing; we handle input ourselves
       readOnly
       value={display}
       onKeyDown={handleKeyDown}

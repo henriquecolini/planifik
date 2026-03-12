@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { ChevronDown, FolderPlus, LogOut, Users, Plus, Check, Globe } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { Check, ChevronDown, FolderPlus, Globe, LogOut, Plus, Users } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useI18n, type Lang } from "@/lib/i18n";
+import { type Lang, useI18n } from "@/lib/i18n";
 import type { Group } from "@/types";
 
 interface TopBarProps {
@@ -17,28 +17,46 @@ interface TopBarProps {
   onManageGroup: () => void;
 }
 
-export function TopBar({ groups, activeGroup, onGroupChange, onCreateFolder, onCreateGroup, onManageGroup }: TopBarProps) {
+export function TopBar({
+  groups,
+  activeGroup,
+  onGroupChange,
+  onCreateFolder,
+  onCreateGroup,
+  onManageGroup,
+}: TopBarProps) {
   const { data: session } = useSession();
   const { t, lang, setLang } = useI18n();
   const user = session?.user;
 
-  const [groupMenuOpen,   setGroupMenuOpen]   = useState(false);
+  const [groupMenuOpen, setGroupMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
-  const closeAll = () => { setGroupMenuOpen(false); setProfileMenuOpen(false); };
+  const closeAll = () => {
+    setGroupMenuOpen(false);
+    setProfileMenuOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-border-subtle">
       <div className="flex items-center gap-2 px-4 max-w-2xl mx-auto" style={{ height: 52 }}>
-
         {/* ── Profile ── */}
         <div className="relative">
           <button
-            onClick={() => { setProfileMenuOpen((v) => !v); setGroupMenuOpen(false); }}
+            onClick={() => {
+              setProfileMenuOpen((v) => !v);
+              setGroupMenuOpen(false);
+            }}
             className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-border-default hover:ring-accent transition-all flex-shrink-0"
           >
             {user?.image ? (
-              <Image src={user.image} alt={user.name ?? "User"} width={32} height={32} className="w-full h-full object-cover" />
+              <Image
+                src={user.image}
+                alt={user.name ?? "User"}
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full bg-accent-dim flex items-center justify-center text-xs font-semibold text-accent">
                 {user?.name?.[0]?.toUpperCase() ?? "?"}
@@ -69,7 +87,7 @@ export function TopBar({ groups, activeGroup, onGroupChange, onCreateFolder, onC
                         "flex-1 text-xs py-1 rounded-lg font-medium transition-colors",
                         lang === l
                           ? "bg-accent text-white"
-                          : "bg-elevated text-text-secondary hover:bg-hover"
+                          : "bg-elevated text-text-secondary hover:bg-hover",
                       )}
                     >
                       {l === "pt-BR" ? "Português" : "English"}
@@ -92,29 +110,55 @@ export function TopBar({ groups, activeGroup, onGroupChange, onCreateFolder, onC
         {/* ── Group switcher ── */}
         <div className="flex-1 flex justify-center relative">
           <button
-            onClick={() => { setGroupMenuOpen((v) => !v); setProfileMenuOpen(false); }}
+            onClick={() => {
+              setGroupMenuOpen((v) => !v);
+              setProfileMenuOpen(false);
+            }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-elevated transition-colors"
           >
-            <span className="text-sm font-semibold text-text-primary">{activeGroup?.name ?? t("selectGroup")}</span>
-            <ChevronDown size={13} className={cn("text-text-muted transition-transform", groupMenuOpen && "rotate-180")} />
+            <span className="text-sm font-semibold text-text-primary">
+              {activeGroup?.name ?? t("selectGroup")}
+            </span>
+            <ChevronDown
+              size={13}
+              className={cn("text-text-muted transition-transform", groupMenuOpen && "rotate-180")}
+            />
           </button>
 
           {groupMenuOpen && (
             <div className="absolute top-9 left-1/2 -translate-x-1/2 w-52 bg-white border border-border-default rounded-xl shadow-lg overflow-hidden z-50 animate-slide-down">
               {groups.map((g) => (
-                <button key={g.id} onClick={() => { onGroupChange(g); setGroupMenuOpen(false); }}
-                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm text-text-primary hover:bg-elevated transition-colors">
+                <button
+                  key={g.id}
+                  onClick={() => {
+                    onGroupChange(g);
+                    setGroupMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm text-text-primary hover:bg-elevated transition-colors"
+                >
                   <span className="truncate">{g.name}</span>
-                  {g.id === activeGroup?.id && <Check size={13} className="text-accent flex-shrink-0" />}
+                  {g.id === activeGroup?.id && (
+                    <Check size={13} className="text-accent flex-shrink-0" />
+                  )}
                 </button>
               ))}
               <div className="border-t border-border-subtle">
-                <button onClick={() => { onManageGroup(); setGroupMenuOpen(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:bg-elevated transition-colors">
+                <button
+                  onClick={() => {
+                    onManageGroup();
+                    setGroupMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:bg-elevated transition-colors"
+                >
                   <Users size={13} /> {t("manageGroup")}
                 </button>
-                <button onClick={() => { onCreateGroup(); setGroupMenuOpen(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:bg-elevated transition-colors">
+                <button
+                  onClick={() => {
+                    onCreateGroup();
+                    setGroupMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:bg-elevated transition-colors"
+                >
                   <Plus size={13} /> {t("newGroup")}
                 </button>
               </div>
@@ -123,9 +167,11 @@ export function TopBar({ groups, activeGroup, onGroupChange, onCreateFolder, onC
         </div>
 
         {/* ── Folders ── */}
-        <button onClick={onCreateFolder}
+        <button
+          onClick={onCreateFolder}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-elevated transition-colors flex-shrink-0"
-          title={t("newFolder")}>
+          title={t("newFolder")}
+        >
           <FolderPlus size={16} />
         </button>
 

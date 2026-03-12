@@ -10,7 +10,7 @@ export type DeleteMode = "this" | "following" | "all";
 
 export type PaymentMethod = "credit_card" | "checking_account" | "cash";
 
-import NextAuth, { DefaultSession } from "next-auth";
+import { DefaultSession } from "next-auth";
 
 declare module "next-auth" {
   interface Session {
@@ -192,29 +192,55 @@ export interface BankInfo {
 }
 
 export const BANKS: BankInfo[] = [
-  { slug: "nubank",      name: "Nubank",       color: "#820ad1ff", textColor: "#fff" },
-  { slug: "itau",        name: "Itaú",         color: "#ff6200ff", textColor: "#fff" },
-  { slug: "inter",       name: "Inter",        color: "#ea7100ff", textColor: "#fff" },
-  { slug: "caixa",       name: "Caixa",        color: "#ffffffff", textColor: "#fff" },
-  { slug: "c6",          name: "C6 Bank",      color: "#000000ff", textColor: "#f5d000" },
-  { slug: "bradesco",    name: "Bradesco",     color: "#cc092fff", textColor: "#fff" },
-  { slug: "santander",   name: "Santander",    color: "#ea1d25ff", textColor: "#fff" },
-  { slug: "btg",         name: "BTG",          color: "#001e61ff", textColor: "#fff" },
-  { slug: "sicoob",      name: "Sicoob",       color: "#003641ff", textColor: "#fff" },
-  { slug: "safra",       name: "Safra",        color: "#1e2044ff", textColor: "#fff" },
-  { slug: "picpay",      name: "PicPay",       color: "#21c25eff", textColor: "#fff" },
+  { slug: "nubank", name: "Nubank", color: "#820ad1ff", textColor: "#fff" },
+  { slug: "itau", name: "Itaú", color: "#ff6200ff", textColor: "#fff" },
+  { slug: "inter", name: "Inter", color: "#ea7100ff", textColor: "#fff" },
+  { slug: "caixa", name: "Caixa", color: "#ffffffff", textColor: "#fff" },
+  { slug: "c6", name: "C6 Bank", color: "#000000ff", textColor: "#f5d000" },
+  { slug: "bradesco", name: "Bradesco", color: "#cc092fff", textColor: "#fff" },
+  { slug: "santander", name: "Santander", color: "#ea1d25ff", textColor: "#fff" },
+  { slug: "btg", name: "BTG", color: "#001e61ff", textColor: "#fff" },
+  { slug: "sicoob", name: "Sicoob", color: "#003641ff", textColor: "#fff" },
+  { slug: "safra", name: "Safra", color: "#1e2044ff", textColor: "#fff" },
+  { slug: "picpay", name: "PicPay", color: "#21c25eff", textColor: "#fff" },
   { slug: "mercadopago", name: "Mercado Pago", color: "#ffe700ff", textColor: "#fff" },
-  { slug: "pagbank",     name: "PagBank",      color: "#ffffffff", textColor: "#000" },
-  { slug: "pan",         name: "Pan",          color: "#00a0fdfe", textColor: "#fff" },
-  { slug: "neon",        name: "Neon",         color: "#00a0fdfe", textColor: "#000" },
-  { slug: "next",        name: "Next",         color: "#00ff5fff", textColor: "#000" },
+  { slug: "pagbank", name: "PagBank", color: "#ffffffff", textColor: "#000" },
+  { slug: "pan", name: "Pan", color: "#00a0fdfe", textColor: "#fff" },
+  { slug: "neon", name: "Neon", color: "#00a0fdfe", textColor: "#000" },
+  { slug: "next", name: "Next", color: "#00ff5fff", textColor: "#000" },
 ];
 
 // ─── Generic item icons ───────────────────────────────────────────────────────
 
 export const ITEM_ICONS = [
-  "🏠", "💡", "💧", "🔥", "📱", "🚗", "✈️", "🎬",
-  "🛒", "🍕", "🏋️", "📚", "💊", "🐾", "👕", "🎮",
-  "🎵", "☕", "🚌", "⛽", "🌐", "💳", "🏦", "💰",
-  "📦", "🔧", "🏥", "📺", "🎓", "💼",
+  "🏠",
+  "💡",
+  "💧",
+  "🔥",
+  "📱",
+  "🚗",
+  "✈️",
+  "🎬",
+  "🛒",
+  "🍕",
+  "🏋️",
+  "📚",
+  "💊",
+  "🐾",
+  "👕",
+  "🎮",
+  "🎵",
+  "☕",
+  "🚌",
+  "⛽",
+  "🌐",
+  "💳",
+  "🏦",
+  "💰",
+  "📦",
+  "🔧",
+  "🏥",
+  "📺",
+  "🎓",
+  "💼",
 ];

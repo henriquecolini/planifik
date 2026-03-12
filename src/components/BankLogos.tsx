@@ -74,22 +74,39 @@ export const NextLogo = (props: LogoProps) => (
 export function getBankLogo(slug: string, props: LogoProps) {
   props = { width: 32, height: 32, ...props };
   switch (slug) {
-    case "nubank":    return <NubankLogo    {...props} />;
-    case "itau":      return <ItauLogo      {...props} />;
-    case "inter":     return <InterLogo     {...props} />;
-    case "caixa":     return <CaixaLogo     {...props} />;
-    case "c6":        return <C6Logo        {...props} />;
-    case "bradesco":  return <BradescoLogo  {...props} />;
-    case "santander": return <SantanderLogo {...props} />;
-    case "btg":       return <BTGLogo       {...props} />;
-    case "sicoob":    return <SicoobLogo    {...props} />;
-    case "safra":     return <SafraLogo     {...props} />;
-    case "picpay":    return <PicPayLogo    {...props} />;
-    case "mercadopago": return <MercadoPagoLogo {...props} />;
-    case "pagbank":   return <PagBankLogo   {...props} />;
-    case "pan":       return <PanLogo       {...props} />;
-    case "neon":      return <NeonLogo      {...props} />;
-    case "next":      return <NextLogo      {...props} />;
-    default:          return null;
+    case "nubank":
+      return <NubankLogo {...props} />;
+    case "itau":
+      return <ItauLogo {...props} />;
+    case "inter":
+      return <InterLogo {...props} />;
+    case "caixa":
+      return <CaixaLogo {...props} />;
+    case "c6":
+      return <C6Logo {...props} />;
+    case "bradesco":
+      return <BradescoLogo {...props} />;
+    case "santander":
+      return <SantanderLogo {...props} />;
+    case "btg":
+      return <BTGLogo {...props} />;
+    case "sicoob":
+      return <SicoobLogo {...props} />;
+    case "safra":
+      return <SafraLogo {...props} />;
+    case "picpay":
+      return <PicPayLogo {...props} />;
+    case "mercadopago":
+      return <MercadoPagoLogo {...props} />;
+    case "pagbank":
+      return <PagBankLogo {...props} />;
+    case "pan":
+      return <PanLogo {...props} />;
+    case "neon":
+      return <NeonLogo {...props} />;
+    case "next":
+      return <NextLogo {...props} />;
+    default:
+      return null;
   }
 }

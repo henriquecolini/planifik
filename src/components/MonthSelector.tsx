@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn, formatMonth, addMonths, sameMonth, currentMonth } from "@/lib/utils";
+import { addMonths, cn, currentMonth, formatMonth, sameMonth } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import type { MonthSelection } from "@/types";
 
@@ -21,14 +21,16 @@ export function MonthSelector({ value, onChange }: MonthSelectorProps) {
         onClick={() => onChange(todayMonth)}
         className={cn(
           "absolute left-4 text-xs font-medium text-accent transition-all duration-150",
-          isCurrentMonth ? "opacity-0 pointer-events-none" : "opacity-100"
+          isCurrentMonth ? "opacity-0 pointer-events-none" : "opacity-100",
         )}
       >
         {t("today")}
       </button>
 
-      <button onClick={() => onChange(addMonths(value, -1))}
-        className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors">
+      <button
+        onClick={() => onChange(addMonths(value, -1))}
+        className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
+      >
         <ChevronLeft size={15} />
       </button>
 
@@ -36,8 +38,10 @@ export function MonthSelector({ value, onChange }: MonthSelectorProps) {
         {formatMonth(value, lang)}
       </span>
 
-      <button onClick={() => onChange(addMonths(value, 1))}
-        className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors">
+      <button
+        onClick={() => onChange(addMonths(value, 1))}
+        className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
+      >
         <ChevronRight size={15} />
       </button>
     </div>

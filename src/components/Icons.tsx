@@ -14,11 +14,22 @@ interface BankIconProps {
 }
 
 const BANK_ABBREVIATIONS: Record<string, string> = {
-  nubank: "Nu", itau: "Itaú", inter: "Inter", caixa: "CEF",
-  c6: "C6", bradesco: "Brad", santander: "San", btg: "BTG",
-  sicoob: "SCB", safra: "Sfr",
-  picpay: "Pic", mercadopago: "MP", pagbank: "Pag",
-  pan: "Pan", neon: "Neon", next: "Next",
+  nubank: "Nu",
+  itau: "Itaú",
+  inter: "Inter",
+  caixa: "CEF",
+  c6: "C6",
+  bradesco: "Brad",
+  santander: "San",
+  btg: "BTG",
+  sicoob: "SCB",
+  safra: "Sfr",
+  picpay: "Pic",
+  mercadopago: "MP",
+  pagbank: "Pag",
+  pan: "Pan",
+  neon: "Neon",
+  next: "Next",
 };
 
 const BANK_SIZE_CLASSES = {
@@ -32,11 +43,13 @@ export function BankIcon({ bank, size = "md", className }: BankIconProps) {
 
   if (!info) {
     return (
-      <div className={cn(
-        "flex items-center justify-center bg-elevated border border-border-default text-text-muted select-none",
-        BANK_SIZE_CLASSES[size],
-        className,
-      )}>
+      <div
+        className={cn(
+          "flex items-center justify-center bg-elevated border border-border-default text-text-muted select-none",
+          BANK_SIZE_CLASSES[size],
+          className,
+        )}
+      >
         🏦
       </div>
     );
@@ -72,20 +85,22 @@ const ITEM_SIZE_CLASSES = {
 };
 
 const ITEM_TYPE_CLASSES: Record<string, string> = {
-  BILL:             "bg-bill-bg   border border-bill-border",
-  INCOME:           "bg-income-bg border border-income-border",
-  CREDIT_CARD:      "bg-bill-bg   border border-bill-border",
+  BILL: "bg-bill-bg   border border-bill-border",
+  INCOME: "bg-income-bg border border-income-border",
+  CREDIT_CARD: "bg-bill-bg   border border-bill-border",
   CHECKING_ACCOUNT: "bg-income-bg border border-income-border",
 };
 
 export function ItemIcon({ icon, type, size = "md", className }: ItemIconProps) {
   return (
-    <div className={cn(
-      "flex items-center justify-center flex-shrink-0 select-none",
-      ITEM_SIZE_CLASSES[size],
-      ITEM_TYPE_CLASSES[type],
-      className,
-    )}>
+    <div
+      className={cn(
+        "flex items-center justify-center flex-shrink-0 select-none",
+        ITEM_SIZE_CLASSES[size],
+        ITEM_TYPE_CLASSES[type],
+        className,
+      )}
+    >
       {icon}
     </div>
   );

@@ -31,8 +31,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const updated = await prisma.folder.update({
     where: { id: params.id },
     data: {
-      ...(body.name            && { name:            body.name.trim() }),
-      ...(body.icon            && { icon:            body.icon }),
+      ...(body.name && { name: body.name.trim() }),
+      ...(body.icon && { icon: body.icon }),
       ...(body.backgroundColor && { backgroundColor: body.backgroundColor }),
     },
   });

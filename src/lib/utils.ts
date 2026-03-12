@@ -1,6 +1,6 @@
 // lib/utils.ts — Client-safe utility functions (no server-only imports)
 
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { Item, MonthSelection } from "@/types";
 import type { Lang } from "./i18n";
@@ -98,24 +98,36 @@ export function dueDateInfo(dueDate: Date): {
   isExpired: boolean;
   isUrgent: boolean;
 } {
-  const now   = new Date();
+  const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const due   = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-  const days  = Math.round((due.getTime() - today.getTime()) / 86_400_000);
+  const due = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+  const days = Math.round((due.getTime() - today.getTime()) / 86_400_000);
 
   const formattedDate = dueDate.toLocaleDateString("pt-BR", { month: "short", day: "numeric" });
 
-  if (days < -1)   return { type: "expiredDaysAgo",   days: Math.abs(days), formattedDate, isExpired: true,  isUrgent: false };
-  if (days === -1) return { type: "expiredYesterday", days: 1,              formattedDate, isExpired: true,  isUrgent: false };
-  if (days === 0)  return { type: "today",            days: 0,              formattedDate, isExpired: false, isUrgent: true  };
-  if (days === 1)  return { type: "tomorrow",         days: 1,              formattedDate, isExpired: false, isUrgent: true  };
-  if (days <= 7)   return { type: "inDays",           days,                 formattedDate, isExpired: false, isUrgent: true  };
-  return                  { type: "on",               days,                 formattedDate, isExpired: false, isUrgent: false };
+  if (days < -1)
+    return {
+      type: "expiredDaysAgo",
+      days: Math.abs(days),
+      formattedDate,
+      isExpired: true,
+      isUrgent: false,
+    };
+  if (days === -1)
+    return { type: "expiredYesterday", days: 1, formattedDate, isExpired: true, isUrgent: false };
+  if (days === 0)
+    return { type: "today", days: 0, formattedDate, isExpired: false, isUrgent: true };
+  if (days === 1)
+    return { type: "tomorrow", days: 1, formattedDate, isExpired: false, isUrgent: true };
+  if (days <= 7) return { type: "inDays", days, formattedDate, isExpired: false, isUrgent: true };
+  return { type: "on", days, formattedDate, isExpired: false, isUrgent: false };
 }
 
 // ─── Recurrence ───────────────────────────────────────────────────────────────
 
-export function getRecurrenceMode(item: Pick<Item, "startMonth" | "endMonth">): "once" | "limited" | "forever" {
+export function getRecurrenceMode(
+  item: Pick<Item, "startMonth" | "endMonth">,
+): "once" | "limited" | "forever" {
   if (!item.endMonth) return "forever";
   if (item.startMonth === item.endMonth) return "once";
   return "limited";

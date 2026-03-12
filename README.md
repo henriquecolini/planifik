@@ -20,7 +20,7 @@ A small collaborative personal finance tracker built with **Next.js 14**, **Type
 ## Stack
 
 | Layer     | Tech                       |
-|-----------|----------------------------|
+| --------- | -------------------------- |
 | Framework | Next.js 14 (App Router)    |
 | Language  | TypeScript                 |
 | Styling   | Tailwind CSS + Outfit font |
@@ -46,6 +46,7 @@ cp .env.example .env
 ```
 
 Fill in:
+
 - `DATABASE_URL` - your PostgreSQL connection string
 - `NEXTAUTH_SECRET` - generate with `openssl rand -base64 32`
 - `NEXTAUTH_URL` - `http://localhost:3000` for local dev
@@ -103,6 +104,7 @@ npm run db:push     # Push schema changes (dev only)
 ### Environment variables for production
 
 Make sure to set:
+
 - `DATABASE_URL` pointing to your production Postgres instance
 - `NEXTAUTH_URL` pointing to your production domain
 - `NEXTAUTH_SECRET` (a strong random secret)

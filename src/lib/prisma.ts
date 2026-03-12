@@ -2,7 +2,6 @@
 // In development, hot-reloading creates multiple instances without this pattern.
 
 import { PrismaClient } from "@prisma/client";
-import { Decimal } from "@prisma/client/runtime/library";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: ReturnType<typeof createPrismaClient> | undefined;

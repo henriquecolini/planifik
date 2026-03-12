@@ -20,17 +20,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   if (!member) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const body = await req.json() as {
+  const body = (await req.json()) as {
     folders?: { id: string; position: number }[];
-    items?:   { id: string; position: number; folderId: string | null }[];
+    items?: { id: string; position: number; folderId: string | null }[];
   };
 
   await prisma.$transaction([
     ...(body.folders ?? []).map(({ id, position }) =>
-      prisma.folder.update({ where: { id }, data: { position } })
+      prisma.folder.update({ where: { id }, data: { position } }),
     ),
     ...(body.items ?? []).map(({ id, position, folderId }) =>
-      prisma.item.update({ where: { id }, data: { position, folderId } })
+      prisma.item.update({ where: { id }, data: { position, folderId } }),
     ),
   ]);
 
