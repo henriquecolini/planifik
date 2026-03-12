@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
       dueDay:         body.dueDay ?? null,
       dueNextMonth:   body.dueNextMonth ?? false,
       dueDate:        body.dueDate ? new Date(body.dueDate) : null,
-      balances: {
+      defaultAmount:  body.defaultAmount !== undefined && body.defaultAmount !== null ? new Decimal(body.defaultAmount) : null,
+      balances: body.defaultAmount !== undefined && body.defaultAmount !== null ? undefined : {
         create: {
           month: body.month ?? body.startMonth,
           amount: new Decimal(body.monthlyBalance ?? body.amount ?? 0),
@@ -57,7 +58,9 @@ export async function POST(req: NextRequest) {
 
   const response = {
     ...item,
-    balance: item.balances[0]?.amount ?? 0,
+    defaultAmount: item.defaultAmount ? new Decimal(item.defaultAmount).toNumber() : null,
+    monthBalance: item.balances[0]?.amount != null ? new Decimal(item.balances[0].amount).toNumber() : null,
+    balance: new Decimal(item.balances[0]?.amount ?? item.defaultAmount ?? 0).toNumber(),
   };
   delete (response as any).balances;
 

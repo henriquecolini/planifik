@@ -67,13 +67,15 @@ export interface Item {
   dueDay: number | null;
   dueNextMonth: boolean;
   dueDate: string | null;
+  defaultAmount?: number | null;
   position: number;
   createdAt: string;
   updatedAt: string;
   user?: User;
   // Fields computed by the API for the queried month:
   isPaid?: boolean;
-  balance: number; // This month's balance (signed; checking accounts can be negative)
+  monthBalance?: number | null; // Specific balance for this month, if any
+  balance: number; // Final balance (monthBalance ?? defaultAmount ?? 0)
   event?: ItemEvent | null;
   folder?: Folder | null;
 }
@@ -142,6 +144,7 @@ export interface CreateItemRequest {
   dueDay?: number | null;
   dueNextMonth?: boolean;
   dueDate?: string | null;
+  defaultAmount?: number | null;
 }
 
 export interface UpdateItemRequest {
@@ -156,6 +159,8 @@ export interface UpdateItemRequest {
   dueDay?: number | null;
   dueNextMonth?: boolean;
   dueDate?: string | null;
+  defaultAmount?: number | null;
+  resetToDefault?: boolean;
 }
 
 export interface PayItemRequest {

@@ -42,6 +42,9 @@ export function AddItemModal({
   const [repeatCount, setRepeatCount] = useState("3");
   const [dueDay,      setDueDay]      = useState("");
   const [dueDayNextMonth, setDueDayNextMonth] = useState(false);
+  const [isDefaultBalance, setIsDefaultBalance] = useState(false);
+  const [defaultAmountReais, setDefaultAmountReais] = useState(0);
+  const [resetToDefault, setResetToDefault] = useState(false);
 
   // UI state
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
@@ -61,7 +64,10 @@ export function AddItemModal({
     if (editItem) {
       setTitle(editItem.title);
       setType(editItem.type);
-      setAmountReais(editItem.balance ?? 0);
+      setAmountReais(editItem.monthBalance ?? editItem.balance ?? 0);
+      setDefaultAmountReais(editItem.defaultAmount ?? 0);
+      setIsDefaultBalance(editItem.defaultAmount != null && editItem.monthBalance == null);
+      setResetToDefault(false);
       setIcon(editItem.icon);
       setBank(editItem.bank ?? "");
       setFolderId(editItem.folderId ?? "");
@@ -82,6 +88,7 @@ export function AddItemModal({
       setTitle(""); setType("BILL"); setAmountReais(0); setIcon("💡");
       setBank(""); setFolderId(""); setRecurrence("once");
       setRepeatCount("3"); setDueDay(""); setDueDayNextMonth(false); setError("");
+      setIsDefaultBalance(false); setDefaultAmountReais(0); setResetToDefault(false);
     }
 
     setAmountKey((k) => k + 1); // remount CentsInput so it re-reads initialValue
@@ -101,6 +108,12 @@ export function AddItemModal({
   })();
 
   // ── Submit ─────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (resetToDefault && amountReais !== defaultAmountReais) {
+      setResetToDefault(false);
+    }
+  }, [amountReais, resetToDefault, defaultAmountReais]);
+
   const handleSubmit = async () => {
     setError("");
 
@@ -121,12 +134,14 @@ export function AddItemModal({
         amount:         amountReais,
         icon:           isAccountType(type) ? (bank || "🏦") : icon,
         bank:           isAccountType(type) ? (bank || null) : null,
-        monthlyBalance: amountReais,
+        monthlyBalance: resetToDefault ? null : amountReais,
         month:          defaultMonth,
-        startMonth:     defaultMonth,
+        startMonth:     isEditing ? undefined : defaultMonth,
         endMonth:       computedEndMonth,
         dueDay:         dueDay ? parseInt(dueDay, 10) : null,
         dueNextMonth:   dueDayNextMonth,
+        defaultAmount:  isDefaultBalance ? amountReais : (isEditing ? defaultAmountReais : null),
+        resetToDefault: isEditing ? (resetToDefault || isDefaultBalance) : undefined,
       };
 
       const url    = isEditing ? `/api/items/${editItem!.id}` : "/api/items";
@@ -298,19 +313,98 @@ export function AddItemModal({
 
       {/* ── Amount (CentsInput) ── */}
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-text-secondary">{amountLabel}</label>
-        {type === "CHECKING_ACCOUNT" && (
-          <p className="text-[11px] text-text-muted">{t("negativeHint")}</p>
+        {isEditing && editItem?.defaultAmount != null ? (
+          <div className="space-y-3 bg-base p-3 rounded-lg border border-border-default">
+            <p className="text-[11px] text-text-secondary leading-tight">{t("bothBalancesExplain")}</p>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-text-secondary">{t("monthBalance")}</label>
+              <div className="flex gap-2">
+                <div className="flex-1 flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
+                  <CentsInput
+                    key={`month-${amountKey}`}
+                    initialValue={amountReais}
+                    onChange={setAmountReais}
+                    allowNegative={type === "CHECKING_ACCOUNT"}
+                    className="flex-1 text-sm text-text-primary px-3 py-2 text-left"
+                  />
+                </div>
+                {editItem?.monthBalance != null && !resetToDefault && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setAmountReais(defaultAmountReais);
+                      setResetToDefault(true);
+                      setAmountKey((k) => k + 1);
+                    }}
+                    className="text-[11px] h-9"
+                  >
+                    {t("resetToDefault")}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-text-secondary">{t("defaultBalance")}</label>
+              <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
+                <CentsInput
+                  key={`default-${amountKey}`}
+                  initialValue={defaultAmountReais}
+                  onChange={setDefaultAmountReais}
+                  allowNegative={type === "CHECKING_ACCOUNT"}
+                  className="flex-1 text-sm text-text-primary px-3 py-2 text-left"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-baseline justify-between">
+              <label className="block text-xs font-medium text-text-secondary">{amountLabel}</label>
+              {isEditing && editItem?.monthBalance != null && !resetToDefault && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmountReais(defaultAmountReais);
+                    setResetToDefault(true);
+                    setAmountKey((k) => k + 1);
+                  }}
+                  className="text-[10px] text-accent hover:underline font-medium"
+                >
+                  {t("resetToDefault")}
+                </button>
+              )}
+            </div>
+
+            {type === "CHECKING_ACCOUNT" && (
+              <p className="text-[11px] text-text-muted">{t("negativeHint")}</p>
+            )}
+
+            <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
+              <CentsInput
+                key={amountKey}
+                initialValue={amountReais}
+                onChange={setAmountReais}
+                allowNegative={type === "CHECKING_ACCOUNT"}
+                className="flex-1 text-sm text-text-primary px-3 py-2 text-left"
+              />
+            </div>
+
+            {recurrence !== "once" && (
+              <label className="flex items-center gap-2 cursor-pointer mt-1.5 select-none">
+                <input
+                  type="checkbox"
+                  checked={isDefaultBalance}
+                  onChange={(e) => setIsDefaultBalance(e.target.checked)}
+                  className="rounded border-border-default accent-accent w-4 h-4"
+                />
+                <span className="text-xs text-text-secondary">{t("setDefaultBalance")}</span>
+              </label>
+            )}
+          </>
         )}
-        <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/20 transition-colors">
-          <CentsInput
-            key={amountKey}
-            initialValue={amountReais}
-            onChange={setAmountReais}
-            allowNegative={type === "CHECKING_ACCOUNT"}
-            className="flex-1 text-sm text-text-primary px-3 py-2 text-left"
-          />
-        </div>
       </div>
 
       {/* ── Folder ── */}

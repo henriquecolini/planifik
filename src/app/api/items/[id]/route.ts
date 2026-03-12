@@ -44,8 +44,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const body: UpdateItemRequest = await req.json();
 
-  // If monthlyBalance is provided, we update/create the ItemBalance record
-  if (body.monthlyBalance !== undefined && body.month) {
+  // If resetToDefault is true, delete the month's balance record
+  if (body.resetToDefault && body.month) {
+    await prisma.itemBalance.deleteMany({
+      where: { itemId: params.id, month: body.month },
+    });
+  } else if (body.monthlyBalance !== undefined && body.month) {
+    // If monthlyBalance is provided, we update/create the ItemBalance record
     const balanceAmount = body.monthlyBalance !== null ? new Decimal(body.monthlyBalance) : 0;
     await prisma.itemBalance.upsert({
       where: { itemId_month: { itemId: params.id, month: body.month } },
@@ -72,6 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(body.dueDay     !== undefined && { dueDay:         body.dueDay }),
       ...(body.dueNextMonth !== undefined && { dueNextMonth: body.dueNextMonth }),
       ...(body.dueDate    !== undefined && { dueDate:        body.dueDate ? new Date(body.dueDate) : null }),
+      ...(body.defaultAmount !== undefined && { defaultAmount: body.defaultAmount !== null ? new Decimal(body.defaultAmount) : null }),
     },
     include: {
       user:   { select: { id: true, name: true, email: true, image: true } },
@@ -82,7 +88,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const response = {
     ...updated,
-    balance: updated.balances?.[0]?.amount ?? 0,
+    defaultAmount: updated.defaultAmount ? new Decimal(updated.defaultAmount).toNumber() : null,
+    monthBalance: updated.balances?.[0]?.amount != null ? new Decimal(updated.balances[0].amount).toNumber() : null,
+    balance: new Decimal(updated.balances?.[0]?.amount ?? updated.defaultAmount ?? 0).toNumber(),
   };
   delete (response as any).balances;
 

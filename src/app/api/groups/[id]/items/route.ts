@@ -47,10 +47,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .filter((item) => item.exceptions.length === 0)
     .map(({ events, exceptions, balances, ...item }) => ({
       ...item,
+      defaultAmount: item.defaultAmount ? new Decimal(item.defaultAmount).toNumber() : null,
       isPaid:  events.length > 0,
       event:   events[0] ?? null,
-      // Explicitly serialize Decimal → number so JSON never contains Decimal objects
-      balance: balances[0]?.amount ?? 0,
+      monthBalance: balances[0]?.amount != null ? new Decimal(balances[0].amount).toNumber() : null,
+      balance: new Decimal(balances[0]?.amount ?? item.defaultAmount ?? 0).toNumber(),
     }));
 
   // ── Compute totals with Decimal arithmetic (server-side) ──────────────────

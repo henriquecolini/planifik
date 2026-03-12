@@ -147,6 +147,9 @@ model Item {
   /// Day of the month this item is due (1–31). Used for recurring items.
   dueDay Int?
 
+  /// Default balance for all months if no ItemBalance exists.
+  defaultAmount Decimal?
+
   /// Whether the dueDay refers to the next month's calendar.
   /// (e.g. Credit Card due on the 5th of next month).
   dueNextMonth Boolean @default(false)
