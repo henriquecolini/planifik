@@ -9,14 +9,14 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient() {
   return new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   }).$extends({
     result: {
       itemBalance: {
         amount: {
           needs: { amount: true },
           compute(data) {
-            return Number(data.amount);
+            return data.amount;
           },
         },
       },

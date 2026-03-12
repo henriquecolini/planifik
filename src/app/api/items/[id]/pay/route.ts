@@ -9,17 +9,16 @@ import type { PayItemRequest } from "@/types";
 
 import { Decimal } from "@prisma/client/runtime/library";
 
-async function authorize(itemId: string, userId: string) {
+async function authorize(itemId: string, userId: string, month: string) {
   const item = await prisma.item.findUnique({
     where: { id: itemId },
     include: {
-      group: { include: { members: true } },
-      balances: true, // We'll need the balance for the month being paid
+      group: { include: { members: { where: { userId } } } },
+      balances: { where: { month } },
     },
   });
   if (!item) return null;
-  const isMember = item.group.members.some((m) => m.userId === userId);
-  if (!isMember) return null;
+  if (!item.group.members[0]) return null;
   return item;
 }
 
@@ -27,12 +26,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = session?.user?.id;
-  const item = await authorize(params.id, userId);
-  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   const body: PayItemRequest = await req.json();
   if (!body.month) return NextResponse.json({ error: "month is required" }, { status: 400 });
+
+  const userId = session?.user?.id;
+  const item = await authorize(params.id, userId, body.month);
+  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const actionType = item.type === "INCOME" ? "received" : "paid";
 
@@ -46,43 +45,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       actionType,
       paymentMethod: body.paymentMethod ?? null,
       paymentItemId: body.paymentItemId ?? null,
-      balanceDeducted: body.deductBalance ?? false,
     },
     update: {
       paymentMethod: body.paymentMethod ?? null,
       paymentItemId: body.paymentItemId ?? null,
-      balanceDeducted: body.deductBalance ?? false,
     },
   });
 
   // If the user wants to deduct from / add to an account balance, update it now
-  if (body.paymentItemId && body.deductBalance) {
+  if (body.paymentItemId) {
     const accountItem = await prisma.item.findUnique({
-      where: { id: body.paymentItemId },
+      where: { id: body.paymentItemId, type: { in: ["CHECKING_ACCOUNT", "CREDIT_CARD"] } },
       include: { balances: { where: { month: body.month } } },
     });
     if (accountItem) {
-      const currentBal = new Decimal(Number(accountItem.balances[0]?.amount ?? 0));
+      const accountBalance = accountItem.balances[0]?.amount ?? accountItem.defaultAmount ?? 0;
       let newBalance: Decimal;
 
-      const itemBalance = item.balances.find((b) => b.month === body.month);
-      const itemAmount = new Decimal(Number(itemBalance?.amount ?? 0)).abs();
+      const itemBalance = item.balances[0]?.amount ?? item.defaultAmount ?? new Decimal(0);
 
-      if (item.type === "INCOME" && accountItem.type === "CHECKING_ACCOUNT") {
-        // Receiving income → add to checking account
-        newBalance = currentBal.plus(itemAmount);
-      } else if (
-        (item.type === "BILL" || item.type === "CREDIT_CARD") &&
-        accountItem.type === "CHECKING_ACCOUNT"
-      ) {
-        // Paying a bill from checking account → deduct
-        newBalance = currentBal.minus(itemAmount);
-      } else if (item.type === "CREDIT_CARD" && accountItem.type === "CHECKING_ACCOUNT") {
-        // Paying a credit card from checking → deduct
-        newBalance = currentBal.minus(itemAmount);
-      } else {
-        newBalance = currentBal;
-      }
+      newBalance = accountBalance.plus(itemBalance);
 
       await prisma.itemBalance.upsert({
         where: { itemId_month: { itemId: body.paymentItemId, month: body.month } },
@@ -105,12 +87,12 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = session?.user?.id;
-  const item = await authorize(params.id, userId);
-  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   const month = req.nextUrl.searchParams.get("month");
   if (!month) return NextResponse.json({ error: "month is required" }, { status: 400 });
+
+  const userId = session?.user?.id;
+  const item = await authorize(params.id, userId, month);
+  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.itemEvent.deleteMany({
     where: { itemId: params.id, month },

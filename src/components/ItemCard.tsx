@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, GripVertical, MoreHorizontal, Pencil, RotateCcw, Trash2 } from "lucide-react";
-import { cn, dueDateInfo, formatCurrency, getDueDateForMonth } from "@/lib/utils";
+import { cn, dueDateInfo, getDueDateForMonth } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { BankIcon, ItemIcon } from "./Icons";
-import { CentsInput } from "./ui/CentsInput";
 import type { Item } from "@/types";
 import { DraggableAttributes } from "@dnd-kit/core";
+import { CurrencyInput, CurrencyInputOnChangeValues } from "react-currency-input-field";
+import { ColoredCurrency } from "@/components/ColoredCurrency";
 
 interface ItemCardProps {
   item: Item;
@@ -39,35 +40,55 @@ export function ItemCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [strBalance, setStrBalance] = useState<string | undefined>(undefined);
+  const [numBalance, setNumBalance] = useState<number>(item.balance);
 
-  const isPaid = !!item.isPaid;
-  const isAccount = item.type === "CREDIT_CARD" || item.type === "CHECKING_ACCOUNT";
+  const currencyRef = useRef<HTMLInputElement>(null);
+
+  const isCreditCard = item.type === "CREDIT_CARD";
+  const isCheckingAccount = item.type === "CHECKING_ACCOUNT";
   const isIncome = item.type === "INCOME";
-  const isChecking = item.type === "CHECKING_ACCOUNT";
+  const isBill = item.type === "BILL";
 
-  // ── Sign / display ─────────────────────────────────────────────────────────
-  // For checking accounts the stored balance is signed; for all others it is a
-  // positive magnitude and the type determines the sign shown to the user.
-  const rawBalance = item.balance ?? 0;
+  const isBank = isCreditCard || isCheckingAccount;
+  const isPaid = !!item.isPaid;
 
-  const effectivelyPositive =
-    item.type === "INCOME"
-      ? true
-      : item.type === "BILL"
-        ? false
-        : item.type === "CREDIT_CARD"
-          ? false
-          : /* CHECKING_ACCOUNT */ rawBalance >= 0;
+  const forcePositive = isIncome;
+  const forceNegative = isBill || isCreditCard;
+  const visualPositive = (forcePositive && numBalance != 0) || numBalance > 0;
+  const visualNegative = (forceNegative && numBalance != 0) || numBalance < 0;
 
-  const signChar = effectivelyPositive ? "+" : "−";
-  const absForDisplay = Math.abs(rawBalance);
+  /* ───────────────────────────────
+     Sync local state when item changes
+  ─────────────────────────────── */
 
-  // ── Due date ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    setStrBalance(undefined);
+    setNumBalance(item.balance);
+    setEditing(false);
+  }, [item.id, item.balance]);
+
+  /* ───────────────────────────────
+     Focus input when editing starts
+  ─────────────────────────────── */
+
+  useEffect(() => {
+    if (editing) {
+      currencyRef.current?.focus();
+      currencyRef.current?.select();
+    }
+  }, [editing]);
+
+  /* ───────────────────────────────
+     Due date logic
+  ─────────────────────────────── */
+
   const dueDate = getDueDateForMonth(item, month);
   const due = dueDate ? dueDateInfo(dueDate) : null;
 
   const dueLabelText = (() => {
     if (!due) return null;
+
     switch (due.type) {
       case "today":
         return t("dueToday");
@@ -84,27 +105,53 @@ export function ItemCard({
     }
   })();
 
-  // ── Pay button label ───────────────────────────────────────────────────────
-  const actionLabel = isPaid
-    ? isIncome
-      ? t("received")
-      : t("paid")
-    : isIncome
-      ? t("receive")
-      : t("pay");
+  /* ───────────────────────────────
+     Currency input change
+  ─────────────────────────────── */
 
-  // ── Inline balance save ────────────────────────────────────────────────────
-  const commitEdit = async (newValueInReais: number) => {
+  const handleOnValueChange = (
+    _value: string | undefined,
+    _name?: string,
+    values?: CurrencyInputOnChangeValues,
+  ) => {
+    setStrBalance(_value);
+    if (values?.float != null) {
+      setNumBalance(ensureSign(values.float));
+    } else {
+      setNumBalance(0);
+    }
+  };
+
+  const ensureSign = (value: number) => {
+    if (forcePositive) {
+      return Math.abs(value);
+    }
+    if (forceNegative && value != 0) {
+      return -Math.abs(value);
+    }
+    return value;
+  };
+
+  /* ───────────────────────────────
+     Save edited balance
+  ─────────────────────────────── */
+
+  const commitEdit = async () => {
+    const newBalance = ensureSign(numBalance);
     setEditing(false);
-    if (newValueInReais === rawBalance) return;
-
+    if (newBalance === item.balance) return;
     setSaving(true);
+
     try {
       const res = await fetch(`/api/items/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monthlyBalance: newValueInReais, month }),
+        body: JSON.stringify({
+          monthlyBalance: newBalance,
+          month,
+        }),
       });
+
       if (res.ok) {
         const updated = await res.json();
         onAmountSaved({ ...item, ...updated });
@@ -113,6 +160,16 @@ export function ItemCard({
       setSaving(false);
     }
   };
+
+  const cancelEdit = () => {
+    setStrBalance(undefined);
+    setNumBalance(item.balance);
+    setEditing(false);
+  };
+
+  /* ───────────────────────────────
+     Render
+  ─────────────────────────────── */
 
   return (
     <div
@@ -125,14 +182,6 @@ export function ItemCard({
             : "bg-white border-border-subtle hover:border-border-default hover:shadow-sm",
       )}
     >
-      {/* Left type stripe */}
-      <div
-        className={cn(
-          "absolute left-0 top-3 bottom-3 w-0.5 rounded-full transition-opacity",
-          isPaid ? "opacity-0" : effectivelyPositive ? "bg-income" : "bg-bill",
-        )}
-      />
-
       {/* Drag handle */}
       <div
         {...dragHandleListeners}
@@ -142,29 +191,31 @@ export function ItemCard({
         <GripVertical size={14} />
       </div>
 
-      {/* Icon — pointer-events-none so it feels like an image, not selectable text */}
+      {/* Icon */}
       <div className="select-none pointer-events-none flex-shrink-0">
-        {isAccount ? (
+        {isBank ? (
           <BankIcon bank={item.bank} size="md" />
         ) : (
           <ItemIcon icon={item.icon} type={item.type} size="md" />
         )}
       </div>
 
-      {/* Title + due date */}
+      {/* Title */}
       <div className="flex-1 min-w-0">
         <span
           className={cn(
-            "text-sm font-medium item-title block truncate leading-snug",
+            "text-sm font-medium block truncate leading-snug",
             isPaid ? "text-text-muted" : "text-text-primary",
           )}
         >
           {item.title}
         </span>
+
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {item.user?.name && (
             <span className="text-[11px] text-text-muted">{item.user.name.split(" ")[0]}</span>
           )}
+
           {due && dueLabelText && !isPaid && (
             <span
               className={cn(
@@ -182,30 +233,38 @@ export function ItemCard({
         </div>
       </div>
 
-      {/* ── Amount — click to edit inline ── */}
+      {/* Amount */}
       {editing ? (
-        <div
-          className={cn(
-            "flex items-center border border-accent rounded-md overflow-hidden bg-white",
-            "focus-within:ring-1 focus-within:ring-accent/30",
-          )}
-        >
-          <CentsInput
-            initialValue={rawBalance}
-            allowNegative={isChecking}
-            autoFocus
-            onCommit={commitEdit}
-            onCancel={() => setEditing(false)}
+        <div className="flex items-center border border-accent rounded-md overflow-hidden bg-white focus-within:ring-1 focus-within:ring-accent/30">
+          <CurrencyInput
+            ref={currencyRef}
+            defaultValue={numBalance}
+            value={strBalance}
+            onValueChange={handleOnValueChange}
+            allowNegativeValue={!forcePositive}
+            decimalSeparator=","
+            groupSeparator="."
+            decimalScale={2}
+            prefix="R$"
+            onBlur={commitEdit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitEdit();
+              if (e.key === "Escape") cancelEdit();
+            }}
             className={cn(
               "w-32 text-sm font-semibold text-right px-2 py-0.5",
-              effectivelyPositive ? "text-income" : "text-bill",
+              visualPositive ? "text-income" : visualNegative ? "text-bill" : "text-text-primary",
             )}
           />
         </div>
+      ) : isPaid ? (
+        <ColoredCurrency value={numBalance} readonly />
       ) : (
         <button
           onClick={() => {
-            if (!isPaid) setEditing(true);
+            if (!isPaid) {
+              setEditing(true);
+            }
           }}
           disabled={isPaid}
           title={isPaid ? undefined : t("edit")}
@@ -213,36 +272,37 @@ export function ItemCard({
             "text-sm font-semibold tabular-nums flex-shrink-0 rounded px-1 py-0.5 transition-all",
             isPaid
               ? "text-text-muted cursor-default"
-              : effectivelyPositive
-                ? "text-income hover:bg-income-bg cursor-text"
-                : "text-bill   hover:bg-bill-bg   cursor-text",
+              : visualPositive
+                ? "hover:bg-income-bg cursor-text"
+                : visualNegative
+                  ? "hover:bg-bill-bg cursor-text"
+                  : "hover:bg-elevated cursor-text",
             saving && "opacity-50",
           )}
         >
-          {signChar}
-          {formatCurrency(absForDisplay)}
+          {strBalance !== null && <ColoredCurrency value={numBalance} />}
         </button>
       )}
 
-      {/* Pay / Receive button */}
-      <button
-        onClick={() => (isPaid ? onUnpay(item) : onPay(item))}
-        className={cn(
-          "flex-shrink-0 h-7 px-2.5 rounded-lg text-xs font-medium transition-all duration-100 active:scale-95 border",
-          isPaid
-            ? "bg-white border-border-default text-text-muted hover:bg-elevated flex items-center gap-1"
-            : isIncome
-              ? "bg-income-bg text-income border-income-border hover:bg-green-100"
-              : "bg-bill-bg   text-bill   border-bill-border   hover:bg-red-100",
-        )}
-      >
-        {isPaid && <Check size={11} />}
-        {actionLabel}
-      </button>
+      {/* Pay button */}
+      {(!isCheckingAccount || isPaid) && numBalance != 0 && !editing && (
+        <button
+          onClick={() => (isPaid ? onUnpay(item) : onPay(item))}
+          className={cn(
+            "flex-shrink-0 h-7 px-2.5 rounded-lg text-xs font-medium transition-all duration-100 active:scale-95 border",
+            isPaid
+              ? "bg-white border-border-default text-text-muted hover:bg-elevated flex items-center gap-1"
+              : isIncome
+                ? "bg-income-bg text-income border-income-border hover:bg-green-100"
+                : "bg-bill-bg text-bill border-bill-border hover:bg-red-100",
+          )}
+        >
+          {isPaid && <Check size={11} />}
+          {isPaid ? (isIncome ? t("received") : t("paid")) : isIncome ? t("receive") : t("pay")}
+        </button>
+      )}
 
-      {/* ── Three-dot context menu ──
-          Always visible (dimmed), not hidden until hover — avoids the
-          "invisible button on white background" problem. */}
+      {/* Menu */}
       <div className="relative">
         <button
           onClick={(e) => {
@@ -250,7 +310,6 @@ export function ItemCard({
             setMenuOpen((v) => !v);
           }}
           className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
-          title={t("edit")}
         >
           <MoreHorizontal size={14} />
         </button>
@@ -258,33 +317,36 @@ export function ItemCard({
         {menuOpen && (
           <>
             <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
-            <div className="absolute right-0 top-8 w-40 bg-white border border-border-default rounded-xl shadow-lg overflow-hidden z-40 animate-scale-in">
+
+            <div className="absolute right-0 top-8 w-40 bg-white border border-border-default rounded-xl shadow-lg overflow-hidden z-40">
               <button
                 onClick={() => {
                   onEdit(item);
                   setMenuOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:bg-elevated transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-elevated"
               >
                 <Pencil size={13} /> {t("edit")}
               </button>
+
               {isPaid && (
                 <button
                   onClick={() => {
                     onUnpay(item);
                     setMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:bg-elevated transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-elevated"
                 >
                   <RotateCcw size={13} /> {t("markUnpaid")}
                 </button>
               )}
+
               <button
                 onClick={() => {
                   onDelete(item);
                   setMenuOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-bill hover:bg-bill-bg transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-bill hover:bg-bill-bg"
               >
                 <Trash2 size={13} /> {t("delete")}
               </button>
@@ -296,41 +358,28 @@ export function ItemCard({
   );
 }
 
+/* Overlay */
+
 export function ItemCardOverlay({ item }: { item: Item }) {
-  const rawBalance = item.balance ?? 0;
-  const effectivelyPositive =
-    item.type === "INCOME"
-      ? true
-      : item.type === "BILL"
-        ? false
-        : item.type === "CREDIT_CARD"
-          ? false
-          : rawBalance >= 0;
-
-  const signChar = effectivelyPositive ? "+" : "−";
-
-  const isAccount = item.type === "CREDIT_CARD" || item.type === "CHECKING_ACCOUNT";
+  const isCreditCard = item.type === "CREDIT_CARD";
+  const isCheckingAccount = item.type === "CHECKING_ACCOUNT";
+  const isBank = isCreditCard || isCheckingAccount;
 
   return (
     <div className="flex items-center gap-3 px-3 py-3 rounded-xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90">
       <GripVertical size={14} className="text-text-muted flex-shrink-0" />
+
       <div className="select-none pointer-events-none flex-shrink-0">
-        {isAccount ? (
+        {isBank ? (
           <BankIcon bank={item.bank} size="md" />
         ) : (
           <ItemIcon icon={item.icon} type={item.type} size="md" />
         )}
       </div>
+
       <span className="flex-1 text-sm font-medium text-text-primary truncate">{item.title}</span>
-      <span
-        className={cn(
-          "text-sm font-semibold tabular-nums flex-shrink-0",
-          effectivelyPositive ? "text-income" : "text-bill",
-        )}
-      >
-        {signChar}
-        {formatCurrency(Math.abs(rawBalance))}
-      </span>
+
+      <ColoredCurrency value={item.balance} />
     </div>
   );
 }

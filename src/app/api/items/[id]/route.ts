@@ -51,7 +51,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     });
   } else if (body.monthlyBalance !== undefined && body.month) {
     // If monthlyBalance is provided, we update/create the ItemBalance record
-    const balanceAmount = body.monthlyBalance !== null ? new Decimal(body.monthlyBalance) : 0;
+    const balanceAmount = body.monthlyBalance ? new Decimal(body.monthlyBalance) : new Decimal(0);
     await prisma.itemBalance.upsert({
       where: { itemId_month: { itemId: params.id, month: body.month } },
       create: {

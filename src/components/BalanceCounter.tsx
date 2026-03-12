@@ -52,7 +52,7 @@ export function BalanceCounter({ total, pendingCount }: BalanceCounterProps) {
           isPositive ? "text-income" : "text-bill",
         )}
       >
-        {isPositive ? "+" : "−"}&nbsp;{formatCurrency(Math.abs(displayed))}
+        {formatCurrency(displayed)}
       </div>
       {pendingCount > 0 && (
         <p className="text-xs text-text-muted mt-1.5">

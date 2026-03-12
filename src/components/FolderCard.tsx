@@ -135,8 +135,7 @@ export function FolderCardOverlay({ folder, total }: { folder: Folder; total: nu
             total >= 0 ? "text-income" : "text-bill",
           )}
         >
-          {total >= 0 ? "+" : "−"}
-          {formatCurrency(Math.abs(total))}
+          {formatCurrency(total)}
         </span>
       </div>
     </div>

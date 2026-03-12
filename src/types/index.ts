@@ -95,7 +95,6 @@ export interface ItemEvent {
   actionType: string;
   paymentMethod: string | null;
   paymentItemId: string | null;
-  balanceDeducted: boolean;
   createdAt: string;
 }
 
@@ -167,7 +166,6 @@ export interface PayItemRequest {
   month: string;
   paymentMethod?: PaymentMethod;
   paymentItemId?: string;
-  deductBalance?: boolean;
 }
 
 export interface DeleteItemRequest {

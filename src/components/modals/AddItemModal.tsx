@@ -210,9 +210,6 @@ function AddItemModal({
     if (!title.trim()) return setError(t("titleRequired"));
     if (!type) return setError(t("typeRequired"));
 
-    // Checking accounts support negative; all others must be positive
-    if (type !== "CHECKING_ACCOUNT" && amountReais <= 0) return setError(t("validAmount"));
-
     if (isAccountType(type) && !bank) return setError(t("selectBankError"));
 
     setLoading(true);

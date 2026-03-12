@@ -6,6 +6,7 @@ import { BankIcon, ItemIcon } from "@/components/Icons";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import type { Item, PaymentMethod } from "@/types";
+import { ColoredCurrency } from "@/components/ColoredCurrency";
 
 interface PayItemModalProps {
   open: boolean;
@@ -13,11 +14,7 @@ interface PayItemModalProps {
   item: Item | null;
   month: string;
   accounts: Item[];
-  onConfirm: (
-    paymentMethod: PaymentMethod | null,
-    paymentItemId: string | null,
-    deductBalance: boolean,
-  ) => Promise<void>;
+  onConfirm: (paymentMethod: PaymentMethod | null, paymentItemId: string | null) => Promise<void>;
 }
 
 export function PayItemModal({
@@ -30,14 +27,13 @@ export function PayItemModal({
 }: PayItemModalProps) {
   const { t } = useI18n();
   const [selectedAccount, setSelectedAccount] = useState<Item | null>(null);
-  const [deductBalance, setDeductBalance] = useState(true);
   const [loading, setLoading] = useState(false);
 
   if (!item) return null;
 
   const isIncome = item.type === "INCOME";
   const isCard = item.type === "CREDIT_CARD";
-  const amount = item.balance ?? 0;
+  const amount = item.balance;
 
   const checkingAccounts = accounts.filter((a) => a.type === "CHECKING_ACCOUNT");
   const creditCards = accounts.filter((a) => a.type === "CREDIT_CARD");
@@ -50,7 +46,7 @@ export function PayItemModal({
           ? "credit_card"
           : "checking_account"
         : null;
-      await onConfirm(method, selectedAccount?.id ?? null, deductBalance);
+      await onConfirm(method, selectedAccount?.id ?? null);
       onClose();
     } finally {
       setLoading(false);
@@ -60,13 +56,16 @@ export function PayItemModal({
   const isAccountItem = (i: Item) => i.type === "CREDIT_CARD" || i.type === "CHECKING_ACCOUNT";
 
   const AccountOption = ({ acc }: { acc: Item }) => {
-    const balanceAmount = acc.balance ?? 0;
+    const balanceAmount = acc.balance;
+    const isSelected = selectedAccount?.id === acc.id;
     return (
       <button
-        onClick={() => setSelectedAccount(selectedAccount?.id === acc.id ? null : acc)}
+        onClick={() => {
+          setSelectedAccount(isSelected ? null : acc);
+        }}
         className={cn(
-          "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-sm text-left transition-all",
-          selectedAccount?.id === acc.id
+          "w-full flex items-center gap-2.5 px-3 py-3 rounded-xl border text-sm text-left transition-all",
+          isSelected
             ? "border-accent bg-accent-dim"
             : "border-border-subtle bg-white hover:border-border-default",
         )}
@@ -74,7 +73,16 @@ export function PayItemModal({
         <BankIcon bank={acc.bank} size="sm" />
         <span className="flex-1 font-medium text-text-primary">{acc.title}</span>
         <span className="text-xs text-text-muted tabular-nums">
-          {formatCurrency(balanceAmount)}
+          <div className="min-h-8 flex flex-col justify-center items-end">
+            {isSelected ? (
+              <>
+                <div className="line-through">{`${formatCurrency(selectedAccount.balance)}`}</div>
+                <div>{`${formatCurrency(selectedAccount.balance + amount)}`}</div>
+              </>
+            ) : (
+              formatCurrency(balanceAmount)
+            )}
+          </div>
         </span>
       </button>
     );
@@ -108,10 +116,7 @@ export function PayItemModal({
           <p className="text-sm font-medium text-text-primary">{item.title}</p>
           <p className="text-xs text-text-muted">{month}</p>
         </div>
-        <span className={cn("text-sm font-bold", isIncome ? "text-income" : "text-bill")}>
-          {isIncome ? "+" : "−"}
-          {formatCurrency(amount)}
-        </span>
+        <ColoredCurrency value={amount} />
       </div>
 
       {/* Account selection */}
@@ -138,20 +143,6 @@ export function PayItemModal({
           ))}
           {!isCard && creditCards.map((acc) => <AccountOption key={acc.id} acc={acc} />)}
         </div>
-      )}
-
-      {/* Balance toggle */}
-      {selectedAccount && (
-        <Toggle
-          checked={deductBalance}
-          onChange={setDeductBalance}
-          label={isIncome ? t("addToBalance") : t("deductFromBalance")}
-          description={
-            isIncome
-              ? `${formatCurrency(selectedAccount.balance ?? 0)} → ${formatCurrency((selectedAccount.balance ?? 0) + amount)}`
-              : `${formatCurrency(selectedAccount.balance ?? 0)} → ${formatCurrency((selectedAccount.balance ?? 0) - amount)}`
-          }
-        />
       )}
     </Modal>
   );

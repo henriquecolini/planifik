@@ -57,26 +57,14 @@ export function isItemActiveInMonth(item: Item, month: string): boolean {
 // ─── Currency ─────────────────────────────────────────────────────────────────
 
 /**
- * Formats a number as BRL currency. Always pass an absolute value and let
- * the caller prepend the sign (+ / −) so display is always unambiguous.
+ * Formats a number as BRL currency.
  */
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
     minimumFractionDigits: 2,
-  }).format(Math.abs(value));
-}
-
-/**
- * Formats a signed amount with an explicit "+"/"-" prefix and absolute value,
- * ensuring the display never produces "+-" or "--".
- */
-export function formatSignedCurrency(value: number): { sign: "+" | "−"; formatted: string } {
-  return {
-    sign: value >= 0 ? "+" : "−",
-    formatted: formatCurrency(Math.abs(value)),
-  };
+  }).format(value);
 }
 
 // ─── Due date ─────────────────────────────────────────────────────────────────

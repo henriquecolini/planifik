@@ -50,57 +50,41 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .filter((item) => item.exceptions.length === 0)
     .map(({ events, exceptions, balances, ...item }) => ({
       ...item,
-      defaultAmount: item.defaultAmount ? new Decimal(item.defaultAmount).toNumber() : null,
+      defaultAmount: item.defaultAmount,
       isPaid: events.length > 0,
       event: events[0] ?? null,
-      monthBalance: balances[0]?.amount != null ? new Decimal(balances[0].amount).toNumber() : null,
-      balance: new Decimal(balances[0]?.amount ?? item.defaultAmount ?? 0).toNumber(),
+      monthBalance: balances[0]?.amount,
+      balance: balances[0]?.amount ?? item.defaultAmount ?? 0,
     }));
 
   // ── Compute totals with Decimal arithmetic (server-side) ──────────────────
   // Each unpaid item contributes to monthTotal and its folder's total.
   // Semantics:
-  //   INCOME           → positive (money in)
-  //   BILL             → negative (money out), balance stored as positive magnitude
-  //   CREDIT_CARD      → negative, balance = amount owed (positive magnitude)
+  //   INCOME           → positive
+  //   BILL             → negative
+  //   CREDIT_CARD      → negative
   //   CHECKING_ACCOUNT → signed as-is (balance can be negative)
+  // Sums are done by simple addition.
 
   let monthTotal = new Decimal(0);
   const folderTotals: Record<string, Decimal> = {};
 
   for (const item of items) {
     if (item.isPaid) continue;
-
-    const bal = new Decimal(item.balance);
-    const contribution = itemContribution(item.type as ItemType, bal);
-
-    monthTotal = monthTotal.plus(contribution);
-
+    monthTotal = monthTotal.plus(item.balance);
     const key = item.folderId ?? "__unfiled__";
-    folderTotals[key] = (folderTotals[key] ?? new Decimal(0)).plus(contribution);
+    folderTotals[key] = (folderTotals[key] ?? new Decimal(0)).plus(item.balance);
   }
 
   return NextResponse.json({
-    items,
+    items: items.map((item) => ({
+      ...item,
+      balance: item.balance.toNumber(),
+      monthTotal: monthTotal.toNumber(),
+    })),
     monthTotal: monthTotal.toNumber(),
     folderTotals: Object.fromEntries(
       Object.entries(folderTotals).map(([k, v]) => [k, v.toNumber()]),
     ),
   });
-}
-
-/** Returns the signed contribution of one item to the period total. */
-function itemContribution(type: ItemType, balance: Decimal): Decimal {
-  switch (type) {
-    case "INCOME":
-      return balance.abs();
-    case "BILL":
-      return balance.abs().negated();
-    case "CREDIT_CARD":
-      return balance.abs().negated();
-    case "CHECKING_ACCOUNT":
-      return balance; // sign is meaningful
-    default:
-      return new Decimal(0);
-  }
 }

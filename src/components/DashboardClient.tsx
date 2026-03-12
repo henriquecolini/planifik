@@ -233,7 +233,7 @@ export function DashboardClient() {
   );
 
   const handlePayConfirm = useCallback(
-    async (method: PaymentMethod | null, paymentItemId: string | null, deductBalance: boolean) => {
+    async (method: PaymentMethod | null, paymentItemId: string | null) => {
       if (!payItem) return;
       await fetch(`/api/items/${payItem.id}/pay`, {
         method: "POST",
@@ -242,11 +242,10 @@ export function DashboardClient() {
           month: monthString,
           paymentMethod: method,
           paymentItemId,
-          deductBalance,
         }),
       });
       setPayItem(null);
-      fetchItems(true);
+      await fetchItems(true);
     },
     [payItem, monthString, fetchItems],
   );
@@ -258,7 +257,7 @@ export function DashboardClient() {
       if (mode !== "all") params.set("month", monthString);
       await fetch(`/api/items/${deleteItem.id}?${params}`, { method: "DELETE" });
       setDeleteItem(null);
-      fetchItems(true);
+      await fetchItems(true);
     },
     [deleteItem, monthString, fetchItems],
   );
@@ -365,7 +364,7 @@ export function DashboardClient() {
     setActiveType(null);
     if (!over) {
       // If dropped outside, we might need to refetch to ensure UI matches server (since we did optimistic updates in DragOver)
-      fetchItems(true);
+      await fetchItems(true);
       return;
     }
 
@@ -376,7 +375,7 @@ export function DashboardClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ folderIds: folders.map((f) => f.id) }),
       });
-      fetchItems(true);
+      await fetchItems(true);
     } else if (activeType === "item") {
       const activeId = active.id as string;
       const activeItem = items.find((i) => i.id === activeId);
