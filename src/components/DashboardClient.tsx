@@ -41,7 +41,7 @@ import { TopBar }            from "./TopBar";
 import { MonthSelector }     from "./MonthSelector";
 import { BalanceCounter }    from "./BalanceCounter";
 import { FolderSection }     from "./FolderSection";
-import { AddItemModal }      from "./modals/AddItemModal";
+import AddItemModal      from "./modals/AddItemModal";
 import { PayItemModal }      from "./modals/PayItemModal";
 import { DeleteConfirmModal } from "./modals/DeleteConfirmModal";
 import { FolderPopup }       from "./FolderPopup";

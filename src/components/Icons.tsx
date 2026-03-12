@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { BANKS } from "@/types";
+import { getBankLogo } from "./BankLogos";
 
 // All icon containers use select-none so the emoji text is never selectable,
 // making them feel like images to the user.
@@ -16,6 +17,8 @@ const BANK_ABBREVIATIONS: Record<string, string> = {
   nubank: "Nu", itau: "Itaú", inter: "Inter", caixa: "CEF",
   c6: "C6", bradesco: "Brad", santander: "San", btg: "BTG",
   sicoob: "SCB", safra: "Sfr",
+  picpay: "Pic", mercadopago: "MP", pagbank: "Pag",
+  pan: "Pan", neon: "Neon", next: "Next",
 };
 
 const BANK_SIZE_CLASSES = {
@@ -39,16 +42,18 @@ export function BankIcon({ bank, size = "md", className }: BankIconProps) {
     );
   }
 
+  const logo = getBankLogo(info.slug, { className: "w-full h-full" });
+
   return (
     <div
       className={cn(
-        "flex items-center justify-center flex-shrink-0 select-none",
+        "flex items-center justify-center flex-shrink-0 select-none overflow-hidden",
         BANK_SIZE_CLASSES[size],
         className,
       )}
       style={{ backgroundColor: info.color, color: info.textColor ?? "#fff" }}
     >
-      {BANK_ABBREVIATIONS[info.slug] ?? info.slug.slice(0, 2).toUpperCase()}
+      {logo || (BANK_ABBREVIATIONS[info.slug] ?? info.slug.slice(0, 2).toUpperCase())}
     </div>
   );
 }

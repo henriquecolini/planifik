@@ -257,11 +257,16 @@ export function ItemCardOverlay({ item }: { item: Item }) {
 
   const signChar = effectivelyPositive ? "+" : "−";
 
+  const isAccount = item.type === "CREDIT_CARD" || item.type === "CHECKING_ACCOUNT";
+
   return (
       <div className="flex items-center gap-3 px-3 py-3 rounded-xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90">
         <GripVertical size={14} className="text-text-muted flex-shrink-0" />
-        <div className="w-8 h-8 rounded-lg bg-elevated flex items-center justify-center text-lg flex-shrink-0">
-          <ItemIcon type={item.type} icon={item.icon}/>
+        <div className="select-none pointer-events-none flex-shrink-0">
+          {isAccount
+            ? <BankIcon bank={item.bank} size="md" />
+            : <ItemIcon icon={item.icon} type={item.type} size="md" />
+          }
         </div>
         <span className="flex-1 text-sm font-medium text-text-primary truncate">{item.title}</span>
         <span className={cn(

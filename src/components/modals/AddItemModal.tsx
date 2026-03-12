@@ -6,6 +6,7 @@ import { CentsInput } from "@/components/ui/CentsInput";
 import { useI18n } from "@/lib/i18n";
 import { BANKS, ITEM_ICONS } from "@/types";
 import { cn } from "@/lib/utils";
+import { BankIcon } from "@/components/Icons";
 import type { Item, Folder, ItemType, CreateItemRequest, UpdateItemRequest } from "@/types";
 
 interface AddItemModalProps {
@@ -21,10 +22,10 @@ interface AddItemModalProps {
 
 type RecurrenceMode = "once" | "limited" | "forever";
 
-const isAccountType = (type: ItemType) =>
+const isAccountType = (type: ItemType | "") =>
   type === "CREDIT_CARD" || type === "CHECKING_ACCOUNT";
 
-export function AddItemModal({
+function AddItemModal({
   open, onClose, groupId, folders, defaultMonth, editItem, onCreated, onUpdated,
 }: AddItemModalProps) {
   const { t } = useI18n();
@@ -32,7 +33,7 @@ export function AddItemModal({
 
   // ── Form state ─────────────────────────────────────────────────────────────
   const [title,       setTitle]       = useState("");
-  const [type,        setType]        = useState<ItemType>("BILL");
+  const [type,        setType]        = useState<ItemType | "">("");
   // Amount is stored in reais as a number. For checking accounts this can be negative.
   const [amountReais, setAmountReais] = useState(0);
   const [icon,        setIcon]        = useState("💡");
@@ -45,6 +46,9 @@ export function AddItemModal({
   const [isDefaultBalance, setIsDefaultBalance] = useState(false);
   const [defaultAmountReais, setDefaultAmountReais] = useState(0);
   const [resetToDefault, setResetToDefault] = useState(false);
+
+  // Tracks if the user has manually picked an icon or bank
+  const [hasPickedIcon, setHasPickedIcon] = useState(false);
 
   // UI state
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
@@ -73,6 +77,7 @@ export function AddItemModal({
       setFolderId(editItem.folderId ?? "");
       setDueDay(editItem.dueDay != null ? String(editItem.dueDay) : "");
       setDueDayNextMonth(editItem.dueNextMonth || false);
+      setHasPickedIcon(true);
 
       if (!editItem.endMonth) {
         setRecurrence("forever");
@@ -85,10 +90,11 @@ export function AddItemModal({
         setRepeatCount(String((ey - sy) * 12 + (em - sm) + 1));
       }
     } else {
-      setTitle(""); setType("BILL"); setAmountReais(0); setIcon("💡");
+      setTitle(""); setType(""); setAmountReais(0); setIcon("💡");
       setBank(""); setFolderId(""); setRecurrence("once");
       setRepeatCount("3"); setDueDay(""); setDueDayNextMonth(false); setError("");
       setIsDefaultBalance(false); setDefaultAmountReais(0); setResetToDefault(false);
+      setHasPickedIcon(false);
     }
 
     setAmountKey((k) => k + 1); // remount CentsInput so it re-reads initialValue
@@ -114,10 +120,71 @@ export function AddItemModal({
     }
   }, [amountReais, resetToDefault, defaultAmountReais]);
 
+  // ── Dynamic bank selection ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isEditing && !hasPickedIcon && isAccountType(type)) {
+      const t = title.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const foundBank = BANKS.find((b) => {
+        const bn = b.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const bs = b.slug.toLowerCase();
+        return t.includes(bn) || t.includes(bs);
+      });
+      if (foundBank) {
+        setBank(foundBank.slug);
+      }
+    }
+  }, [title, type, hasPickedIcon, isEditing]);
+
+  const handleTypeChange = (newType: ItemType) => {
+    if (type === "" && !isEditing) {
+      if (newType === "BILL" || newType === "INCOME") {
+        setIcon("💰");
+        setRecurrence("once");
+        setDueDay("");
+        setDueDayNextMonth(false);
+      } else if (newType === "CREDIT_CARD") {
+        setRecurrence("forever");
+        setIsDefaultBalance(false);
+        setDueDay("10");
+        setDueDayNextMonth(true);
+      } else if (newType === "CHECKING_ACCOUNT") {
+        setRecurrence("forever");
+        setIsDefaultBalance(false);
+        setDueDay("");
+        setDueDayNextMonth(true);
+      }
+    }
+    setType(newType);
+    setAmountKey((k) => k + 1);
+  };
+
+  const handleRecurrenceChange = (newRecurrence: RecurrenceMode) => {
+    setRecurrence(newRecurrence);
+    if (!isEditing && newRecurrence !== "once") {
+      if (type === "BILL" || type === "INCOME") {
+        setIsDefaultBalance(true);
+      } else if (type === "CREDIT_CARD" || type === "CHECKING_ACCOUNT") {
+        setIsDefaultBalance(false);
+      }
+    }
+  };
+
+  const handleDueDayChange = (val: string) => {
+    setDueDay(val);
+    if (!isEditing && val) {
+      if (type === "BILL" || type === "INCOME") {
+        setDueDayNextMonth(false);
+      } else if (type === "CREDIT_CARD" || type === "CHECKING_ACCOUNT") {
+        setDueDayNextMonth(true);
+      }
+    }
+  };
+
   const handleSubmit = async () => {
     setError("");
 
     if (!title.trim()) return setError(t("titleRequired"));
+    if (!type)         return setError(t("typeRequired"));
 
     // Checking accounts support negative; all others must be positive
     if (type !== "CHECKING_ACCOUNT" && amountReais <= 0) return setError(t("validAmount"));
@@ -161,6 +228,7 @@ export function AddItemModal({
 
   // ── Options ────────────────────────────────────────────────────────────────
   const typeOptions = [
+    { value: "",                label: t("pickTypePlaceholder") },
     { value: "BILL",             label: t("typeBill") },
     { value: "INCOME",           label: t("typeIncome") },
     { value: "CREDIT_CARD",      label: t("typeCreditCard") },
@@ -206,112 +274,97 @@ export function AddItemModal({
         </div>
       )}
 
-      {/* ── Title + icon/bank picker ── */}
-      <div className="space-y-1">
-        <label className="block text-xs font-medium text-text-secondary">{t("titleField")}</label>
-        <div className="flex gap-2">
-
-          {/* Icon / bank button */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                if (isAccountType(type)) { setBankPickerOpen((v) => !v); setIconPickerOpen(false); }
-                else                     { setIconPickerOpen((v) => !v); setBankPickerOpen(false); }
-              }}
-              className="w-10 h-9 flex items-center justify-center rounded-lg border border-border-default bg-white hover:bg-elevated transition-colors text-base flex-shrink-0 select-none"
-              title={t("chooseIcon")}
-            >
-              {isAccountType(type) && bankInfo ? (
-                <span
-                  className="text-[9px] font-bold w-6 h-6 rounded flex items-center justify-center select-none"
-                  style={{ backgroundColor: bankInfo.color, color: bankInfo.textColor ?? "#fff" }}
-                >
-                  {bank.slice(0, 2).toUpperCase()}
-                </span>
-              ) : isAccountType(type) ? "🏦" : icon}
-            </button>
-
-            {/* Emoji picker */}
-            {iconPickerOpen && !isAccountType(type) && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setIconPickerOpen(false)} />
-                <div className="absolute top-11 left-0 z-20 bg-white border border-border-default rounded-xl shadow-lg p-2 w-52 animate-scale-in">
-                  <div className="grid grid-cols-7 gap-1">
-                    {ITEM_ICONS.map((em) => (
-                      <button
-                        key={em}
-                        type="button"
-                        onClick={() => { setIcon(em); setIconPickerOpen(false); }}
-                        className={cn(
-                          "w-7 h-7 flex items-center justify-center rounded-lg text-base hover:bg-elevated transition-colors select-none",
-                          icon === em && "bg-accent-dim ring-1 ring-accent",
-                        )}
-                      >
-                        {em}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Bank picker */}
-            {bankPickerOpen && isAccountType(type) && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setBankPickerOpen(false)} />
-                <div className="absolute top-11 left-0 z-20 bg-white border border-border-default rounded-xl shadow-lg p-3 w-56 animate-scale-in">
-                  <p className="text-xs text-text-muted mb-2">{t("selectBank")}</p>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {BANKS.map((b) => (
-                      <button
-                        key={b.slug}
-                        type="button"
-                        onClick={() => { setBank(b.slug); setBankPickerOpen(false); }}
-                        className={cn(
-                          "flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs text-left transition-all",
-                          bank === b.slug
-                            ? "border-accent bg-accent-dim text-accent"
-                            : "border-border-subtle hover:border-border-default",
-                        )}
-                      >
-                        <div
-                          className="w-5 h-5 rounded flex-shrink-0 flex items-center justify-center text-[8px] font-bold select-none"
-                          style={{ backgroundColor: b.color, color: b.textColor ?? "#fff" }}
-                        >
-                          {b.slug.slice(0, 2).toUpperCase()}
-                        </div>
-                        {b.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Title input */}
-          <input
-            ref={titleRef}
-            type="text"
-            placeholder={isAccountType(type) ? t("titlePlaceholderAcc") : t("titlePlaceholderBill")}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
-            className="flex-1 bg-white border border-border-default rounded-lg text-sm text-text-primary placeholder:text-text-muted px-3 py-2 outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
-          />
-        </div>
-      </div>
-
       {/* ── Type ── */}
       <Select
         label={t("typeField")}
         value={type}
-        onChange={(e) => { setType(e.target.value as ItemType); setBank(""); setAmountKey((k) => k + 1); }}
+        onChange={(e) => handleTypeChange(e.target.value as ItemType)}
         options={typeOptions}
       />
 
-      {/* ── Amount (CentsInput) ── */}
+      {type !== "" && (
+        <>
+        {/* ── Title + icon/bank picker ── */}
+        <div className="space-y-1">
+            <label className="block text-xs font-medium text-text-secondary">{t("titleField")}</label>
+            <div className="flex gap-2">
+
+                {/* Icon / bank button */}
+                <div className="relative">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (isAccountType(type)) { setBankPickerOpen((v) => !v); setIconPickerOpen(false); }
+                            else                     { setIconPickerOpen((v) => !v); setBankPickerOpen(false); }
+                        }}
+                        className="w-10 h-9 flex items-center justify-center rounded-lg border border-border-default bg-white hover:bg-elevated transition-colors text-base flex-shrink-0 select-none"
+                        title={t("chooseIcon")}
+                    >
+                        {isAccountType(type) && bankInfo ? <BankIcon bank={bank} size="sm" className="w-6 h-6 rounded" /> : isAccountType(type) ? "🏦" : icon}
+                    </button>
+
+                    {/* Emoji picker */}
+                    {iconPickerOpen && !isAccountType(type) && <>
+                            <div className="fixed inset-0 z-10" onClick={() => setIconPickerOpen(false)} />
+                            <div className="absolute top-11 left-0 z-20 bg-white border border-border-default rounded-xl shadow-lg p-2 w-52 animate-scale-in">
+                                <div className="grid grid-cols-7 gap-1">
+                                    {ITEM_ICONS.map((em) => (
+                                        <button
+                                            key={em}
+                                            type="button"
+                                            onClick={() => { setIcon(em); setIconPickerOpen(false); setHasPickedIcon(true); }}
+                                            className={cn(
+                                                "w-7 h-7 flex items-center justify-center rounded-lg text-base hover:bg-elevated transition-colors select-none",
+                                                icon === em && "bg-accent-dim ring-1 ring-accent",
+                                            )}
+                                        >
+                                            {em}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </>}
+
+                    {/* Bank picker */}
+                    {bankPickerOpen && isAccountType(type) && <>
+                            <div className="fixed inset-0 z-10" onClick={() => setBankPickerOpen(false)} />
+                            <div className="absolute top-11 left-0 z-20 bg-white border border-border-default rounded-xl shadow-lg p-3 w-56 animate-scale-in">
+                                <p className="text-xs text-text-muted mb-2">{t("selectBank")}</p>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                    {BANKS.map((b) => (
+                                        <button
+                                            key={b.slug}
+                                            type="button"
+                                            onClick={() => { setBank(b.slug); setBankPickerOpen(false); setHasPickedIcon(true); }}
+                                            className={cn(
+                                                "flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs text-left transition-all",
+                                                bank === b.slug
+                                                    ? "border-accent bg-accent-dim text-accent"
+                                                    : "border-border-subtle hover:border-border-default",
+                                            )}
+                                        >
+                                            <BankIcon bank={b.slug} size="sm" className="w-5 h-5 rounded" />
+                                            {b.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </>}
+                </div>
+
+                {/* Title input */}
+                <input
+                    ref={titleRef}
+                    type="text"
+                    placeholder={isAccountType(type) ? t("titlePlaceholderAcc") : t("titlePlaceholderBill")}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+                    className="flex-1 bg-white border border-border-default rounded-lg text-sm text-text-primary placeholder:text-text-muted px-3 py-2 outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
+                />
+            </div>
+        </div>
+          {/* ── Amount (CentsInput) ── */}
       <div className="space-y-1">
         {isEditing && editItem?.defaultAmount != null ? (
           <div className="space-y-3 bg-base p-3 rounded-lg border border-border-default">
@@ -421,7 +474,7 @@ export function AddItemModal({
       <Select
         label={t("recurrenceField")}
         value={recurrence}
-        onChange={(e) => setRecurrence(e.target.value as RecurrenceMode)}
+        onChange={(e) => handleRecurrenceChange(e.target.value as RecurrenceMode)}
         options={recurrenceOptions}
       />
 
@@ -452,7 +505,7 @@ export function AddItemModal({
             max={31}
             placeholder={t("dueDayPlaceholder")}
             value={dueDay}
-            onChange={(e) => setDueDay(e.target.value)}
+            onChange={(e) => handleDueDayChange(e.target.value)}
             className="w-full bg-white border border-border-default rounded-lg text-sm text-text-primary px-3 py-2 outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
           />
           {dueDay && (
@@ -468,6 +521,10 @@ export function AddItemModal({
           )}
         </div>
       )}
-    </Modal>
+    </>
+  )}
+</Modal>
   );
 }
+
+export default AddItemModal

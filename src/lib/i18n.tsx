@@ -72,6 +72,7 @@ const translations = {
   titleField:          { en: "Title",                     "pt-BR": "Nome" },
   titlePlaceholderBill:{ en: "e.g. Rent, Netflix…",       "pt-BR": "Ex: Aluguel, Netflix…" },
   titlePlaceholderAcc: { en: "e.g. Nubank, Itaú…",        "pt-BR": "Ex: Nubank, Itaú…" },
+  pickTypePlaceholder: { en: "Pick a type...",           "pt-BR": "Escolha um tipo..." },
   typeField:           { en: "Type",                      "pt-BR": "Tipo" },
   typeBill:            { en: "Bill",                      "pt-BR": "Despesa" },
   typeIncome:          { en: "Income",                    "pt-BR": "Receita" },
@@ -103,6 +104,7 @@ const translations = {
   validAmount:         { en: "Enter a valid amount.",     "pt-BR": "Informe um valor válido." },
   negativeHint:        { en: "Press − to make it negative.", "pt-BR": "Pressione − para valor negativo." },
   selectBankError:     { en: "Please select a bank.",     "pt-BR": "Selecione um banco." },
+  typeRequired:       { en: "Type is required.",         "pt-BR": "O tipo é obrigatório." },
 
   // ── Pay modal ─────────────────────────────────────────────────────────────
   receiveIncome:       { en: "Receive Income",            "pt-BR": "Receber Receita" },
