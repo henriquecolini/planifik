@@ -5,27 +5,29 @@ import { Check, GripVertical, MoreHorizontal, Pencil, RotateCcw, Trash2 } from "
 import { cn, dueDateInfo, getDueDateForMonth } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { BankIcon, ItemIcon } from "./Icons";
-import type { Item } from "@/types";
+import type { Item, ItemType } from "@/types";
 import { CurrencyInput, CurrencyInputOnChangeValues } from "react-currency-input-field";
 import { ColoredCurrency } from "@/components/ColoredCurrency";
 import { useSortable } from "@dnd-kit/react/sortable";
+import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers";
 
 interface ItemCardProps {
   item: Item;
   month: string;
-  index: number;
+  dragIndex: number;
+  dragGroupId: string;
   onPay: (item: Item) => void;
   onEdit: (item: Item) => void;
   onDelete: (item: Item) => void;
   onUnpay: (item: Item) => void;
   onAmountSaved: (item: Item) => void;
-  isDragging?: boolean;
 }
 
 export function ItemCard({
   item,
   month,
-  index,
+  dragIndex,
+  dragGroupId,
   onPay,
   onEdit,
   onDelete,
@@ -36,10 +38,11 @@ export function ItemCard({
 
   const { ref, isDragging } = useSortable({
     id: item.id,
-    index: index,
+    index: dragIndex,
     type: "item",
     accept: "item",
-    group: item.folderId ?? "__unfiled__",
+    group: dragGroupId,
+    modifiers: [RestrictToVerticalAxis],
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -171,6 +174,13 @@ export function ItemCard({
     setEditing(false);
   };
 
+  const typeOptions: Record<ItemType, string> = {
+    BILL: t("typeBill"),
+    INCOME: t("typeIncome"),
+    CREDIT_CARD: t("typeCreditCard"),
+    CHECKING_ACCOUNT: t("typeChecking"),
+  };
+
   /* ───────────────────────────────
      Render
   ─────────────────────────────── */
@@ -180,7 +190,7 @@ export function ItemCard({
       ref={ref}
       data-dragging={isDragging}
       className={cn(
-        "group relative flex items-center gap-3 pl-2.5 pr-3.5 py-3 rounded-2xl border",
+        "group relative flex items-center gap-2 pl-2.5 pr-3.5 py-3 rounded-2xl border",
         isDragging
           ? "border-accent shadow-lg opacity-80 ring-1 ring-accent/30 bg-white"
           : isPaid
@@ -209,6 +219,7 @@ export function ItemCard({
         </span>
 
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <span className="text-xs text-text-secondary">{typeOptions[item.type]}</span>
           {due && dueLabelText && !isPaid && (
             <span
               className={cn(
@@ -302,7 +313,7 @@ export function ItemCard({
             e.stopPropagation();
             setMenuOpen((v) => !v);
           }}
-          className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
+          className="w-6 h-6 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
         >
           <MoreHorizontal size={14} />
         </button>

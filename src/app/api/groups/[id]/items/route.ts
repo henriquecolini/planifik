@@ -28,6 +28,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     );
   }
 
+  // ── Fetch folders and items ─────────────────────────────────────────────
+  const folders = await prisma.folder.findMany({
+    where: { groupId: params.id },
+    orderBy: { position: "asc" },
+  });
+
   const rawItems = await prisma.item.findMany({
     where: {
       groupId: params.id,
@@ -89,34 +95,39 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       }),
   );
 
-  // ── Compute totals with Decimal arithmetic (server-side) ──────────────────
-  // Each unpaid item contributes to monthTotal and its folder's total.
-  // Semantics:
-  //   INCOME           → positive
-  //   BILL             → negative
-  //   CREDIT_CARD      → negative
-  //   CHECKING_ACCOUNT → signed as-is (balance can be negative)
-  // Sums are done by simple addition.
-
+  // ── Group items and compute totals with Decimal arithmetic (server-side) ──────────────────
   let monthTotal = new Decimal(0);
-  const folderTotals: Record<string, Decimal> = {};
+  const unfiled: any[] = [];
+  const foldersWithItems = folders.map((f) => {
+    const folderItems = items.filter((i) => i.folderId === f.id);
+    let totalAmount = new Decimal(0);
+
+    for (const item of folderItems) {
+      if (!item.isPaid) {
+        totalAmount = totalAmount.plus(item.balance);
+        monthTotal = monthTotal.plus(item.balance);
+      }
+    }
+
+    return {
+      ...f,
+      items: folderItems.map((i) => ({ ...i, balance: i.balance.toNumber() })),
+      totalAmount: totalAmount.toNumber(),
+    };
+  });
 
   for (const item of items) {
-    if (item.isPaid) continue;
-    monthTotal = monthTotal.plus(item.balance);
-    const key = item.folderId ?? "__unfiled__";
-    folderTotals[key] = (folderTotals[key] ?? new Decimal(0)).plus(item.balance);
+    if (!item.folderId) {
+      if (!item.isPaid) {
+        monthTotal = monthTotal.plus(item.balance);
+      }
+      unfiled.push({ ...item, balance: item.balance.toNumber() });
+    }
   }
 
   return NextResponse.json({
-    items: items.map((item) => ({
-      ...item,
-      balance: item.balance.toNumber(),
-      monthTotal: monthTotal.toNumber(),
-    })),
+    folders: foldersWithItems,
+    unfiled,
     monthTotal: monthTotal.toNumber(),
-    folderTotals: Object.fromEntries(
-      Object.entries(folderTotals).map(([k, v]) => [k, v.toNumber()]),
-    ),
   });
 }

@@ -271,7 +271,7 @@ function AddItemModal({
 
   const folderOptions = [
     { value: "", label: t("noFolder") },
-    ...folders.map((f) => ({ value: f.id, label: `${f.icon} ${f.name}` })),
+    ...folders.map((f) => ({ value: f.id, label: f.name })),
   ];
 
   const recurrenceOptions = [

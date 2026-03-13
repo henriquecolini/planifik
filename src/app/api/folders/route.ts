@@ -7,27 +7,6 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { CreateFolderRequest } from "@/types";
 
-export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const userId = session?.user?.id;
-  const groupId = req.nextUrl.searchParams.get("groupId");
-  if (!groupId) return NextResponse.json({ error: "groupId is required" }, { status: 400 });
-
-  const member = await prisma.groupMember.findUnique({
-    where: { groupId_userId: { groupId, userId } },
-  });
-  if (!member) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-  const folders = await prisma.folder.findMany({
-    where: { groupId },
-    orderBy: { position: "asc" },
-  });
-
-  return NextResponse.json(folders);
-}
-
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

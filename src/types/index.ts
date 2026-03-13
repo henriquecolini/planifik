@@ -51,6 +51,7 @@ export interface Folder {
   backgroundColor: string;
   position: number;
   items?: Item[];
+  totalAmount?: number;
 }
 
 export interface Item {
@@ -107,11 +108,10 @@ export interface ItemEvent {
 
 /** Response shape of GET /api/groups/[id]/items */
 export interface ItemsApiResponse {
-  items: Item[];
+  folders: Folder[];
+  unfiled: Item[];
   /** Net balance for the month (unpaid items only), computed with Decimal on the server */
   monthTotal: number;
-  /** Per-folder net totals. Key "__unfiled__" holds items without a folder. */
-  folderTotals: Record<string, number>;
 }
 
 // ─── API Request Types ─────────────────────────────────────────────────────────
