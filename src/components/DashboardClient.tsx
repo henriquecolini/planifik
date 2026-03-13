@@ -23,8 +23,7 @@ import { ItemCard } from "@/components/ItemCard";
 import { ItemBin } from "@/components/ItemBin";
 import { DragDropProvider } from "@dnd-kit/react";
 import { move } from "@dnd-kit/helpers";
-import { Debug } from "@dnd-kit/dom/plugins/debug";
-import { isSortable } from "@dnd-kit/dom/sortable";
+import { isSortable } from "@dnd-kit/react/sortable";
 
 export function DashboardClient() {
   const { status } = useSession();
@@ -279,6 +278,37 @@ export function DashboardClient() {
                   toggleFolderCollapse(String(target.id));
                 }
                 setItems((items) => move(items, event));
+              }
+            }}
+            onDragEnd={async (event) => {
+              const { source, target } = event.operation;
+
+              if (source?.type === "folder") {
+                const newFolderIds = move(folderIds, event);
+                setFolderIds(newFolderIds);
+                await fetch("/api/folders/reorder", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ folderIds: newFolderIds }),
+                });
+              } else if (source?.type === "item") {
+                const newItems = move(items, event);
+                setItems(newItems);
+
+                const itemId = String(source.id);
+                const targetGroup = isSortable(target) ? target.group : undefined;
+                const targetFolderId = String(targetGroup ?? target?.id ?? "__unfiled__");
+                const itemIds = newItems[targetFolderId]?.map((i: Item) => i.id) ?? [];
+
+                await fetch("/api/items/reorder", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    itemId,
+                    folderId: targetFolderId === "__unfiled__" ? null : targetFolderId,
+                    itemIds,
+                  }),
+                });
               }
             }}
           >
