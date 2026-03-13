@@ -6,37 +6,41 @@ import { cn, dueDateInfo, getDueDateForMonth } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { BankIcon, ItemIcon } from "./Icons";
 import type { Item } from "@/types";
-import { DraggableAttributes } from "@dnd-kit/core";
 import { CurrencyInput, CurrencyInputOnChangeValues } from "react-currency-input-field";
 import { ColoredCurrency } from "@/components/ColoredCurrency";
+import { useSortable } from "@dnd-kit/react/sortable";
 
 interface ItemCardProps {
   item: Item;
   month: string;
+  index: number;
   onPay: (item: Item) => void;
   onEdit: (item: Item) => void;
   onDelete: (item: Item) => void;
   onUnpay: (item: Item) => void;
   onAmountSaved: (item: Item) => void;
-  dragHandleListeners?: Record<string, unknown>;
-  dragHandleAttributes?: DraggableAttributes;
   isDragging?: boolean;
 }
 
 export function ItemCard({
   item,
   month,
+  index,
   onPay,
   onEdit,
   onDelete,
   onUnpay,
   onAmountSaved,
-  dragHandleListeners,
-  dragHandleAttributes,
-  isDragging,
 }: ItemCardProps) {
   const { t } = useI18n();
 
+  const { ref, isDragging } = useSortable({
+    id: item.id,
+    index: index,
+    type: "item",
+    accept: "item",
+    group: item.folderId ?? "__unfiled__",
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -173,8 +177,10 @@ export function ItemCard({
 
   return (
     <div
+      ref={ref}
+      data-dragging={isDragging}
       className={cn(
-        "group relative flex items-center gap-3 pl-2.5 pr-3.5 py-3 rounded-2xl border transition-all duration-150",
+        "group relative flex items-center gap-3 pl-2.5 pr-3.5 py-3 rounded-2xl border",
         isDragging
           ? "border-accent shadow-lg opacity-80 ring-1 ring-accent/30 bg-white"
           : isPaid
@@ -182,15 +188,6 @@ export function ItemCard({
             : "bg-white border-border-default hover:shadow-sm",
       )}
     >
-      {/* Drag handle */}
-      <div
-        {...dragHandleListeners}
-        {...dragHandleAttributes}
-        className="flex-shrink-0 text-text-muted hover:text-text-secondary cursor-grab active:cursor-grabbing p-0.5 -ml-1 rounded transition-colors group-hover:opacity-100 opacity-0"
-      >
-        <GripVertical size={14} />
-      </div>
-
       {/* Icon */}
       <div className="select-none pointer-events-none flex-shrink-0">
         {isBank ? (
@@ -212,10 +209,6 @@ export function ItemCard({
         </span>
 
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-          {item.user?.name && (
-            <span className="text-[11px] text-text-muted">{item.user.name.split(" ")[0]}</span>
-          )}
-
           {due && dueLabelText && !isPaid && (
             <span
               className={cn(
@@ -354,32 +347,6 @@ export function ItemCard({
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-/* Overlay */
-
-export function ItemCardOverlay({ item }: { item: Item }) {
-  const isCreditCard = item.type === "CREDIT_CARD";
-  const isCheckingAccount = item.type === "CHECKING_ACCOUNT";
-  const isBank = isCreditCard || isCheckingAccount;
-
-  return (
-    <div className="flex items-center gap-3 px-3 py-3 rounded-2xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90">
-      <GripVertical size={14} className="text-text-muted flex-shrink-0" />
-
-      <div className="select-none pointer-events-none flex-shrink-0">
-        {isBank ? (
-          <BankIcon bank={item.bank} size="md" />
-        ) : (
-          <ItemIcon icon={item.icon} type={item.type} size="md" />
-        )}
-      </div>
-
-      <span className="flex-1 text-sm font-medium text-text-primary truncate">{item.title}</span>
-
-      <ColoredCurrency value={item.balance} />
     </div>
   );
 }

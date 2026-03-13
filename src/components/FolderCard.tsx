@@ -1,44 +1,44 @@
 "use client";
 
-import { ChevronDown, GripVertical, Pencil } from "lucide-react";
+import { ChevronDown, Pencil } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
-import { useI18n } from "@/lib/i18n";
 import type { Folder } from "@/types";
-import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/react/sortable";
+import { CollisionPriority } from "@dnd-kit/abstract";
 
 interface FolderCardProps {
   folder: Folder;
+  index: number;
   total: number;
   children: React.ReactNode;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  /** dnd-kit drag handle listeners — spread onto the drag handle element */
-  dragHandleListeners?: DraggableSyntheticListeners;
-  dragHandleAttributes?: DraggableAttributes;
   isDragging?: boolean;
   onEdit?: (folder: Folder) => void;
 }
 
 export function FolderCard({
   folder,
+  index,
   total,
   children,
   isCollapsed,
   onToggleCollapse,
-  dragHandleListeners,
-  dragHandleAttributes,
-  isDragging,
   onEdit,
 }: FolderCardProps) {
-  const { t } = useI18n();
-
-  // Auto-collapse when dragging
-  const showItems = !isCollapsed && !isDragging;
+  const { ref, isDragging } = useSortable({
+    id: folder.id,
+    index: index,
+    type: "folder",
+    collisionPriority: CollisionPriority.Low,
+    accept: ["item"],
+  });
 
   return (
     <div
+      ref={ref}
       className={cn(
-        "rounded-2xl border bg-white transition-all duration-150",
+        "rounded-2xl border bg-white",
         isDragging
           ? "border-accent shadow-lg opacity-80 ring-1 ring-accent/30"
           : "border-border-default hover:shadow-sm",
@@ -50,16 +50,6 @@ export function FolderCard({
         className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none group/header"
         onClick={onToggleCollapse}
       >
-        {/* Drag handle */}
-        <div
-          {...dragHandleListeners}
-          {...dragHandleAttributes}
-          onClick={(e) => e.stopPropagation()}
-          className="flex-shrink-0 text-text-muted hover:text-text-secondary cursor-grab active:cursor-grabbing p-0.5 -ml-1 rounded"
-        >
-          <GripVertical size={14} />
-        </div>
-
         {/* Name */}
         <div className="flex-1 flex items-center gap-1.5 min-w-0">
           {folder.backgroundColor.split(",")[1] && (
@@ -100,52 +90,17 @@ export function FolderCard({
           size={14}
           className={cn(
             "text-text-muted transition-transform flex-shrink-0",
-            !showItems && "-rotate-90",
+            isCollapsed && "-rotate-90",
           )}
         />
       </div>
 
       {/* ── Items ── */}
-      {showItems && (
-        <div className="px-3 pb-3 space-y-1.5 border-t border-border-subtle pt-2.5">{children}</div>
+      {!isCollapsed && (
+        <div className="px-3 pb-3 flex flex-col gap-2 border-t border-border-subtle pt-2.5">
+          {children}
+        </div>
       )}
-    </div>
-  );
-}
-
-// ── Drag overlay version (rendered while dragging) ────────────────────────────
-export function FolderCardOverlay({ folder, total }: { folder: Folder; total: number }) {
-  return (
-    <div
-      className="rounded-2xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90"
-      style={{ backgroundColor: folder.backgroundColor.split(",")[0] }}
-    >
-      <div className="flex items-center gap-2 px-3 py-2.5 select-none">
-        <GripVertical size={14} className="text-text-muted flex-shrink-0" />
-        <div
-          className="w-6 h-6 rounded-lg flex items-center justify-center text-sm flex-shrink-0 select-none"
-          style={{ backgroundColor: folder.backgroundColor.split(",")[0] }}
-        >
-          {folder.icon}
-        </div>
-        <div className="flex-1 flex items-center gap-1.5 min-w-0">
-          {folder.backgroundColor.split(",")[1] && (
-            <div
-              className="w-3 h-3 rounded-sm flex-shrink-0"
-              style={{ backgroundColor: folder.backgroundColor.split(",")[1] }}
-            />
-          )}
-          <span className="text-sm font-semibold text-text-primary truncate">{folder.name}</span>
-        </div>
-        <span
-          className={cn(
-            "text-sm font-semibold tabular-nums",
-            total >= 0 ? "text-income" : "text-bill",
-          )}
-        >
-          {formatCurrency(total)}
-        </span>
-      </div>
     </div>
   );
 }

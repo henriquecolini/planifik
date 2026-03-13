@@ -16,26 +16,6 @@ import { Loader2, Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-import {
-  closestCorners,
-  defaultDropAnimationSideEffects,
-  DndContext,
-  DragEndEvent,
-  DragOverEvent,
-  DragOverlay,
-  DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-
 import { TopBar } from "./TopBar";
 import { MonthSelector } from "./MonthSelector";
 import { BalanceCounter } from "./BalanceCounter";
@@ -45,13 +25,12 @@ import { UnpayModal } from "./modals/UnpayModal";
 import { DeleteConfirmModal } from "./modals/DeleteConfirmModal";
 import { FolderModal } from "./modals/FolderModal";
 import { GroupModal } from "./modals/GroupModal";
-import { SortableFolder } from "./SortableFolder";
-import { FolderCardOverlay } from "./FolderCard";
-import { ItemCardOverlay } from "./ItemCard";
 
 import { currentMonth, formatMonth, toMonthString } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import type { DeleteMode, Folder, Group, Item, ItemsApiResponse, PaymentMethod } from "@/types";
+import { FolderCard } from "@/components/FolderCard";
+import { ItemCard } from "@/components/ItemCard";
 
 export function DashboardClient() {
   const { status } = useSession();
@@ -88,15 +67,6 @@ export function DashboardClient() {
       return next;
     });
   }, []);
-
-  // We use this to temporarily store the folders/items when a drag starts,
-  // to prevent weird resets or to handle constraints better if needed.
-  const [_, setDragStartFolders] = useState<Folder[]>([]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
 
   // ── Modal state ────────────────────────────────────────────────────────────
   const [addItemOpen, setAddItemOpen] = useState(false);
@@ -289,124 +259,124 @@ export function DashboardClient() {
   );
 
   // ── Render ─────────────────────────────────────────────────────────────────
-
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const id = active.id as string;
-    setActiveId(id);
-    const type = active.data.current?.type as "folder" | "item";
-    setActiveType(type);
-
-    if (type === "folder") {
-      setDragStartFolders(folders);
-      // Automatically collapse the folder being dragged
-      setCollapsedFolderIds((prev) => new Set(prev).add(id));
-    }
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const overId = over.id as string;
-    const overType = over.data.current?.type as "folder" | "item";
-
-    // ── Folder constraints ───────────────────────────────────────────────────
-    if (activeType === "folder") {
-      // Folders can only be dragged over other folders.
-      // We ignore items and "unfiled"
-      if (overType !== "folder" || overId === "unfiled") return;
-
-      setFolders((prev) => {
-        const oldIndex = prev.findIndex((f) => f.id === active.id);
-        const newIndex = prev.findIndex((f) => f.id === overId);
-        if (oldIndex === -1 || newIndex === -1) return prev;
-        return arrayMove(prev, oldIndex, newIndex);
-      });
-      return;
-    }
-
-    // ── Item constraints ─────────────────────────────────────────────────────
-    if (activeType === "item") {
-      setItems((prev) => {
-        const activeIndex = prev.findIndex((i) => i.id === active.id);
-        if (activeIndex === -1) return prev;
-
-        const activeItem = prev[activeIndex];
-        let newFolderId = activeItem.folderId;
-        let overIndex = -1;
-
-        if (overType === "folder") {
-          // If hovering over a folder header, check if it's open
-          if (overId !== "unfiled" && collapsedFolderIds.has(overId)) {
-            // Nothing happens when an item is placed in front of a closed folder
-            return prev;
-          }
-          newFolderId = overId === "unfiled" ? null : overId;
-        } else {
-          overIndex = prev.findIndex((i) => i.id === overId);
-          if (overIndex !== -1) newFolderId = prev[overIndex].folderId;
-        }
-
-        // If nothing changed in terms of position or folderId, return
-        if (activeIndex === overIndex && newFolderId === activeItem.folderId) return prev;
-
-        let newItems: Item[];
-        if (overType === "item" && overIndex !== -1) {
-          newItems = arrayMove(prev, activeIndex, overIndex);
-        } else if (overType === "folder") {
-          const item = { ...activeItem, folderId: newFolderId };
-          const temp = [...prev];
-          temp.splice(activeIndex, 1);
-          // Find the last item in the target folder to place this item after it
-          const lastInFolderIndex = [...temp]
-            .reverse()
-            .findIndex((i) => i.folderId === newFolderId);
-          const targetIndex = lastInFolderIndex !== -1 ? temp.length - lastInFolderIndex : 0;
-          temp.splice(targetIndex, 0, item);
-          newItems = temp;
-        } else {
-          return prev;
-        }
-
-        return newItems.map((i) => (i.id === active.id ? { ...i, folderId: newFolderId } : i));
-      });
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-    setActiveType(null);
-    if (!over) {
-      // If dropped outside, we might need to refetch to ensure UI matches server (since we did optimistic updates in DragOver)
-      await fetchItems(true);
-      return;
-    }
-
-    if (activeType === "folder") {
-      // Persist folder order
-      await fetch("/api/folders/reorder", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folderIds: folders.map((f) => f.id) }),
-      });
-      await fetchItems(true);
-    } else if (activeType === "item") {
-      const activeId = active.id as string;
-      const activeItem = items.find((i) => i.id === activeId);
-      if (!activeItem) return;
-
-      const folderId = activeItem.folderId;
-      const itemIds = items.filter((i) => i.folderId === folderId).map((i) => i.id);
-
-      fetch("/api/items/reorder", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId: activeId, folderId, itemIds }),
-      }).then(() => fetchItems(true));
-    }
-  };
+  //
+  // const handleDragStart = (event: DragStartEvent) => {
+  //   const { active } = event;
+  //   const id = active.id as string;
+  //   setActiveId(id);
+  //   const type = active.data.current?.type as "folder" | "item";
+  //   setActiveType(type);
+  //
+  //   if (type === "folder") {
+  //     setDragStartFolders(folders);
+  //     // Automatically collapse the folder being dragged
+  //     setCollapsedFolderIds((prev) => new Set(prev).add(id));
+  //   }
+  // };
+  //
+  // const handleDragOver = (event: DragOverEvent) => {
+  //   const { active, over } = event;
+  //   if (!over || active.id === over.id) return;
+  //
+  //   const overId = over.id as string;
+  //   const overType = over.data.current?.type as "folder" | "item";
+  //
+  //   // ── Folder constraints ───────────────────────────────────────────────────
+  //   if (activeType === "folder") {
+  //     // Folders can only be dragged over other folders.
+  //     // We ignore items and "unfiled"
+  //     if (overType !== "folder" || overId === "unfiled") return;
+  //
+  //     setFolders((prev) => {
+  //       const oldIndex = prev.findIndex((f) => f.id === active.id);
+  //       const newIndex = prev.findIndex((f) => f.id === overId);
+  //       if (oldIndex === -1 || newIndex === -1) return prev;
+  //       return arrayMove(prev, oldIndex, newIndex);
+  //     });
+  //     return;
+  //   }
+  //
+  //   // ── Item constraints ─────────────────────────────────────────────────────
+  //   if (activeType === "item") {
+  //     setItems((prev) => {
+  //       const activeIndex = prev.findIndex((i) => i.id === active.id);
+  //       if (activeIndex === -1) return prev;
+  //
+  //       const activeItem = prev[activeIndex];
+  //       let newFolderId = activeItem.folderId;
+  //       let overIndex = -1;
+  //
+  //       if (overType === "folder") {
+  //         // If hovering over a folder header, check if it's open
+  //         if (overId !== "unfiled" && collapsedFolderIds.has(overId)) {
+  //           // Nothing happens when an item is placed in front of a closed folder
+  //           return prev;
+  //         }
+  //         newFolderId = overId === "unfiled" ? null : overId;
+  //       } else {
+  //         overIndex = prev.findIndex((i) => i.id === overId);
+  //         if (overIndex !== -1) newFolderId = prev[overIndex].folderId;
+  //       }
+  //
+  //       // If nothing changed in terms of position or folderId, return
+  //       if (activeIndex === overIndex && newFolderId === activeItem.folderId) return prev;
+  //
+  //       let newItems: Item[];
+  //       if (overType === "item" && overIndex !== -1) {
+  //         newItems = arrayMove(prev, activeIndex, overIndex);
+  //       } else if (overType === "folder") {
+  //         const item = { ...activeItem, folderId: newFolderId };
+  //         const temp = [...prev];
+  //         temp.splice(activeIndex, 1);
+  //         // Find the last item in the target folder to place this item after it
+  //         const lastInFolderIndex = [...temp]
+  //           .reverse()
+  //           .findIndex((i) => i.folderId === newFolderId);
+  //         const targetIndex = lastInFolderIndex !== -1 ? temp.length - lastInFolderIndex : 0;
+  //         temp.splice(targetIndex, 0, item);
+  //         newItems = temp;
+  //       } else {
+  //         return prev;
+  //       }
+  //
+  //       return newItems.map((i) => (i.id === active.id ? { ...i, folderId: newFolderId } : i));
+  //     });
+  //   }
+  // };
+  //
+  // const handleDragEnd = async (event: DragEndEvent) => {
+  //   const { active, over } = event;
+  //   setActiveId(null);
+  //   setActiveType(null);
+  //   if (!over) {
+  //     // If dropped outside, we might need to refetch to ensure UI matches server (since we did optimistic updates in DragOver)
+  //     await fetchItems(true);
+  //     return;
+  //   }
+  //
+  //   if (activeType === "folder") {
+  //     // Persist folder order
+  //     await fetch("/api/folders/reorder", {
+  //       method: "PATCH",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ folderIds: folders.map((f) => f.id) }),
+  //     });
+  //     await fetchItems(true);
+  //   } else if (activeType === "item") {
+  //     const activeId = active.id as string;
+  //     const activeItem = items.find((i) => i.id === activeId);
+  //     if (!activeItem) return;
+  //
+  //     const folderId = activeItem.folderId;
+  //     const itemIds = items.filter((i) => i.folderId === folderId).map((i) => i.id);
+  //
+  //     fetch("/api/items/reorder", {
+  //       method: "PATCH",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ itemId: activeId, folderId, itemIds }),
+  //     }).then(() => fetchItems(true));
+  //   }
+  // };
 
   if (status === "loading" || status === "unauthenticated") {
     return (
@@ -459,84 +429,49 @@ export function DashboardClient() {
         ) : (
           <>
             {/* Item list, organized by folder */}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCorners}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={
-                  activeType === "folder"
-                    ? folderIds
-                    : activeType === "item"
-                      ? itemIds
-                      : allSortableIds
-                }
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-5 mt-1">
-                  {folders.map((folder) => (
-                    <SortableFolder
-                      key={folder.id}
-                      folder={folder}
-                      items={itemsByFolder.get(folder.id) ?? []}
-                      total={folderTotals[folder.id] ?? 0}
+            <div className="flex flex-col gap-2">
+              {folders.map((folder, folderIndex) => (
+                <FolderCard
+                  key={folder.id}
+                  folder={folder}
+                  index={folderIndex}
+                  total={folderTotals[folder.id] ?? 0}
+                  isCollapsed={collapsedFolderIds.has(folder.id)}
+                  onToggleCollapse={() => toggleFolderCollapse(folder.id)}
+                >
+                  {itemsByFolder.get(folder.id)?.map((item, itemIndex) => (
+                    <ItemCard
+                      key={item.id}
+                      item={item}
                       month={monthString}
-                      activeType={activeType}
-                      isCollapsed={collapsedFolderIds.has(folder.id)}
-                      onToggleCollapse={() => toggleFolderCollapse(folder.id)}
+                      index={itemIndex}
                       onPay={handlePay}
                       onEdit={handleEdit}
                       onDelete={handleDelete}
                       onUnpay={handleUnpay}
                       onAmountSaved={handleAmountSaved}
-                      onEditFolder={(f) => {
-                        setEditFolder(f);
-                        setFolderModalOpen(true);
-                      }}
                     />
                   ))}
+                </FolderCard>
+              ))}
 
-                  {/* Unfiled items — no header */}
-                  <SortableFolder
-                    folder={null}
-                    items={itemsByFolder.get(null) ?? []}
-                    total={folderTotals["__unfiled__"] ?? 0}
+              {/* Unfiled items */}
+              <div className="flex flex-col gap-2 mt-2">
+                {itemsByFolder.get(null)?.map((item, index) => (
+                  <ItemCard
+                    key={item.id}
+                    item={item}
                     month={monthString}
-                    activeType={activeType}
-                    isCollapsed={false}
-                    onToggleCollapse={() => {}}
+                    index={index}
                     onPay={handlePay}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onUnpay={handleUnpay}
                     onAmountSaved={handleAmountSaved}
                   />
-                </div>
-              </SortableContext>
-
-              <DragOverlay
-                adjustScale={false}
-                dropAnimation={{
-                  sideEffects: defaultDropAnimationSideEffects({
-                    styles: { active: { opacity: "0.5" } },
-                  }),
-                }}
-              >
-                {activeId ? (
-                  activeType === "folder" ? (
-                    <FolderCardOverlay
-                      folder={folders.find((f) => f.id === activeId)!}
-                      total={folderTotals[activeId] ?? 0}
-                    />
-                  ) : (
-                    <ItemCardOverlay item={items.find((i) => i.id === activeId)!} />
-                  )
-                ) : null}
-              </DragOverlay>
-            </DndContext>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </main>
