@@ -72,12 +72,14 @@ export function PayItemModal({
       >
         <BankIcon bank={acc.bank} size="sm" />
         <span className="flex-1 font-medium text-text-primary">{acc.title}</span>
-        <span className="text-xs text-text-muted tabular-nums">
+        <span
+          className={cn("text-xs tabular-nums", isSelected ? "text-accent" : "text-text-secondary")}
+        >
           <div className="min-h-8 flex flex-col justify-center items-end">
             {isSelected ? (
               <>
                 <div className="line-through">{`${formatCurrency(selectedAccount.balance)}`}</div>
-                <div>{`${formatCurrency(selectedAccount.balance + amount)}`}</div>
+                <div className="font-bold">{`${formatCurrency(selectedAccount.balance + amount)}`}</div>
               </>
             ) : (
               formatCurrency(balanceAmount)

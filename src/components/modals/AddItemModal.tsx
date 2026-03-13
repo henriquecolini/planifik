@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, Modal, Select } from "@/components/ui/index";
-import { CentsInput } from "@/components/ui/CentsInput";
 import { useI18n } from "@/lib/i18n";
 import type { CreateItemRequest, Folder, Item, ItemType, UpdateItemRequest } from "@/types";
 import { BANKS, ITEM_ICONS } from "@/types";
 import { cn } from "@/lib/utils";
 import { BankIcon } from "@/components/Icons";
+import { CurrencyInput } from "react-currency-input-field";
 
 interface AddItemModalProps {
   open: boolean;
@@ -63,7 +63,16 @@ function AddItemModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Used to remount CentsInput when we need it to reset to a new initialValue
+  const forcePositive = type === "INCOME";
+  const forceNegative = type === "BILL" || type === "CREDIT_CARD";
+
+  const ensureSign = (value: number) => {
+    if (forcePositive) return Math.abs(value);
+    if (forceNegative && value !== 0) return -Math.abs(value);
+    return value;
+  };
+
+  // Used to remount CurrencyInput when we need it to reset to a new initialValue
   const [amountKey, setAmountKey] = useState(0);
 
   const titleRef = useRef<HTMLInputElement>(null);
@@ -114,7 +123,7 @@ function AddItemModal({
       setHasPickedIcon(false);
     }
 
-    setAmountKey((k) => k + 1); // remount CentsInput so it re-reads initialValue
+    setAmountKey((k) => k + 1); // remount CurrencyInput so it re-reads initialValue
     setIconPickerOpen(false);
     setBankPickerOpen(false);
     setTimeout(() => titleRef.current?.focus(), 50);
@@ -423,9 +432,9 @@ function AddItemModal({
               </div>
             </div>
           </div>
-          {/* ── Amount (CentsInput) ── */}
+          {/* ── Amount (CurrencyInput) ── */}
           <div className="space-y-1">
-            {isEditing && editItem?.defaultAmount != null ? (
+            {isEditing && editItem?.defaultAmount != null && recurrence != "once" ? (
               <div className="space-y-3 bg-base p-3 rounded-lg border border-border-default">
                 <p className="text-[11px] text-text-secondary leading-tight">
                   {t("bothBalancesExplain")}
@@ -437,12 +446,19 @@ function AddItemModal({
                   </label>
                   <div className="flex gap-2">
                     <div className="flex-1 flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
-                      <CentsInput
+                      <CurrencyInput
                         key={`month-${amountKey}`}
-                        initialValue={amountReais}
-                        onChange={setAmountReais}
-                        allowNegative={type === "CHECKING_ACCOUNT"}
-                        className="flex-1 text-sm text-text-primary px-3 py-2 text-left"
+                        defaultValue={amountReais}
+                        onValueChange={(v, _, values) =>
+                          setAmountReais(values?.float != null ? ensureSign(values.float) : 0)
+                        }
+                        onFocus={(e) => e.target.select()}
+                        allowNegativeValue={!forcePositive}
+                        decimalSeparator=","
+                        groupSeparator="."
+                        decimalScale={2}
+                        prefix="R$"
+                        className="flex-1 text-sm text-text-primary px-3 py-2 text-left bg-transparent outline-none"
                       />
                     </div>
                     {editItem?.monthBalance != null && !resetToDefault && (
@@ -467,12 +483,19 @@ function AddItemModal({
                     {t("defaultBalance")}
                   </label>
                   <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
-                    <CentsInput
+                    <CurrencyInput
                       key={`default-${amountKey}`}
-                      initialValue={defaultAmountReais}
-                      onChange={setDefaultAmountReais}
-                      allowNegative={type === "CHECKING_ACCOUNT"}
-                      className="flex-1 text-sm text-text-primary px-3 py-2 text-left"
+                      defaultValue={defaultAmountReais}
+                      onValueChange={(v, _, values) =>
+                        setDefaultAmountReais(values?.float != null ? ensureSign(values.float) : 0)
+                      }
+                      onFocus={(e) => e.target.select()}
+                      allowNegativeValue={!forcePositive}
+                      decimalSeparator=","
+                      groupSeparator="."
+                      decimalScale={2}
+                      prefix="R$"
+                      className="flex-1 text-sm text-text-primary px-3 py-2 text-left bg-transparent outline-none"
                     />
                   </div>
                 </div>
@@ -483,19 +506,6 @@ function AddItemModal({
                   <label className="block text-xs font-medium text-text-secondary">
                     {amountLabel}
                   </label>
-                  {isEditing && editItem?.monthBalance != null && !resetToDefault && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAmountReais(defaultAmountReais);
-                        setResetToDefault(true);
-                        setAmountKey((k) => k + 1);
-                      }}
-                      className="text-[10px] text-accent hover:underline font-medium"
-                    >
-                      {t("resetToDefault")}
-                    </button>
-                  )}
                 </div>
 
                 {type === "CHECKING_ACCOUNT" && (
@@ -503,12 +513,19 @@ function AddItemModal({
                 )}
 
                 <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
-                  <CentsInput
+                  <CurrencyInput
                     key={amountKey}
-                    initialValue={amountReais}
-                    onChange={setAmountReais}
-                    allowNegative={type === "CHECKING_ACCOUNT"}
-                    className="flex-1 text-sm text-text-primary px-3 py-2 text-left"
+                    defaultValue={amountReais}
+                    onValueChange={(v, _, values) =>
+                      setAmountReais(values?.float != null ? ensureSign(values.float) : 0)
+                    }
+                    onFocus={(e) => e.target.select()}
+                    allowNegativeValue={!forcePositive}
+                    decimalSeparator=","
+                    groupSeparator="."
+                    decimalScale={2}
+                    prefix="R$"
+                    className="flex-1 text-sm text-text-primary px-3 py-2 text-left bg-transparent outline-none"
                   />
                 </div>
 
