@@ -186,6 +186,7 @@ const translations = {
     en: `Delete "{name}"? Items will become unfiled.`,
     "pt-BR": `Excluir "{name}"? Os itens ficarão sem pasta.`,
   },
+  preview: { en: "Preview", "pt-BR": "Prévia" },
 
   // ── Groups ────────────────────────────────────────────────────────────────
   newGroupTitle: { en: "New Group", "pt-BR": "Novo Grupo" },

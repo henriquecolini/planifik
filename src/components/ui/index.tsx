@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, forwardRef } from "react";
 
 // ─── Button ───────────────────────────────────────────────────────────────────
 
@@ -124,48 +124,43 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   rightContent?: React.ReactNode;
 }
 
-export function Input({
-  label,
-  error,
-  hint,
-  leftContent,
-  rightContent,
-  className,
-  id,
-  ...props
-}: InputProps) {
-  const inputId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
-  return (
-    <div className="space-y-1">
-      {label && (
-        <label htmlFor={inputId} className="block text-xs font-medium text-text-secondary">
-          {label}
-        </label>
-      )}
-      <div
-        className={cn(
-          "flex items-center bg-white border rounded-lg overflow-hidden transition-colors",
-          error
-            ? "border-bill"
-            : "border-border-default focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/20",
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ label, error, hint, leftContent, rightContent, className, id, ...props }, ref) => {
+    const inputId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
+    return (
+      <div className="space-y-1">
+        {label && (
+          <label htmlFor={inputId} className="block text-xs font-medium text-text-secondary">
+            {label}
+          </label>
         )}
-      >
-        {leftContent && <span className="pl-3 text-text-muted text-sm">{leftContent}</span>}
-        <input
-          id={inputId}
+        <div
           className={cn(
-            "flex-1 bg-transparent text-text-primary placeholder:text-text-muted text-sm px-3 py-2 outline-none",
-            className,
+            "flex items-center bg-white border rounded-lg overflow-hidden transition-colors",
+            error
+              ? "border-bill"
+              : "border-border-default focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/20",
           )}
-          {...props}
-        />
-        {rightContent && <span className="pr-3 text-text-muted text-sm">{rightContent}</span>}
+        >
+          {leftContent && <span className="pl-3 text-text-muted text-sm">{leftContent}</span>}
+          <input
+            id={inputId}
+            ref={ref}
+            className={cn(
+              "flex-1 bg-transparent text-text-primary placeholder:text-text-muted text-sm px-3 py-2 outline-none",
+              className,
+            )}
+            {...props}
+          />
+          {rightContent && <span className="pr-3 text-text-muted text-sm">{rightContent}</span>}
+        </div>
+        {error && <p className="text-xs text-bill">{error}</p>}
+        {hint && !error && <p className="text-xs text-text-muted">{hint}</p>}
       </div>
-      {error && <p className="text-xs text-bill">{error}</p>}
-      {hint && !error && <p className="text-xs text-text-muted">{hint}</p>}
-    </div>
-  );
-}
+    );
+  },
+);
+Input.displayName = "Input";
 
 // ─── Select ───────────────────────────────────────────────────────────────────
 
@@ -175,35 +170,39 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   options: { value: string; label: string }[];
 }
 
-export function Select({ label, error, options, className, id, ...props }: SelectProps) {
-  const selectId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
-  return (
-    <div className="space-y-1">
-      {label && (
-        <label htmlFor={selectId} className="block text-xs font-medium text-text-secondary">
-          {label}
-        </label>
-      )}
-      <select
-        id={selectId}
-        className={cn(
-          "w-full bg-white border border-border-default rounded-lg text-text-primary text-sm px-3 py-2",
-          "outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors cursor-pointer",
-          error && "border-bill",
-          className,
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(
+  ({ label, error, options, className, id, ...props }, ref) => {
+    const selectId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
+    return (
+      <div className="space-y-1">
+        {label && (
+          <label htmlFor={selectId} className="block text-xs font-medium text-text-secondary">
+            {label}
+          </label>
         )}
-        {...props}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      {error && <p className="text-xs text-bill">{error}</p>}
-    </div>
-  );
-}
+        <select
+          id={selectId}
+          ref={ref}
+          className={cn(
+            "w-full bg-white border border-border-default rounded-lg text-text-primary text-sm px-3 py-2",
+            "outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors cursor-pointer",
+            error && "border-bill",
+            className,
+          )}
+          {...props}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        {error && <p className="text-xs text-bill">{error}</p>}
+      </div>
+    );
+  },
+);
+Select.displayName = "Select";
 
 // ─── Toggle ───────────────────────────────────────────────────────────────────
 

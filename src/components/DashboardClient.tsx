@@ -43,7 +43,7 @@ import AddItemModal from "./modals/AddItemModal";
 import { PayItemModal } from "./modals/PayItemModal";
 import { UnpayModal } from "./modals/UnpayModal";
 import { DeleteConfirmModal } from "./modals/DeleteConfirmModal";
-import { FolderPopup } from "./FolderPopup";
+import { FolderModal } from "./modals/FolderModal";
 import { GroupModal } from "./modals/GroupModal";
 import { SortableFolder } from "./SortableFolder";
 import { FolderCardOverlay } from "./FolderCard";
@@ -605,7 +605,7 @@ export function DashboardClient() {
         onConfirm={handleUnpayConfirm}
       />
 
-      <FolderPopup
+      <FolderModal
         open={folderModalOpen}
         onClose={() => {
           setFolderModalOpen(false);

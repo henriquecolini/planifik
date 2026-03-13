@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
-import { Button, Input, Modal } from "@/components/ui/index";
+// Full-screen modal for creating OR editing a folder.
+// Replaces the previous inline popup.
+
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
+import { Button, Modal, Input } from "@/components/ui";
 import type { Folder } from "@/types";
 
 const FOLDER_ICONS = [
@@ -26,81 +29,89 @@ const FOLDER_ICONS = [
   "📱",
 ];
 const FOLDER_COLORS = [
-  "#F0F2F5",
-  "#FEF2F2",
-  "#ECFDF5",
-  "#EFF6FF",
-  "#FFF7ED",
-  "#F5F3FF",
-  "#FFFBEB",
-  "#F0FDF4",
-  "#FDF4FF",
-  "#FFF1F2",
+  { preview: "#ffffff", color: "#ffffff" },
+  { preview: "#ef4444", color: "#FEF2F2,#ef4444" },
+  { preview: "#10b981", color: "#ECFDF5,#10b981" },
+  { preview: "#3b82f6", color: "#EFF6FF,#3b82f6" },
+  { preview: "#f97316", color: "#FFF7ED,#f97316" },
+  { preview: "#8b5cf6", color: "#F5F3FF,#8b5cf6" },
 ];
 
-interface FolderModalProps {
+interface FolderPopupProps {
   open: boolean;
   onClose: () => void;
   groupId: string;
-  folders: Folder[];
   editFolder?: Folder | null;
-  onCreated: (f: Folder) => void;
-  onUpdated: (f: Folder) => void;
-  onDeleted: (id: string) => void;
+  onCreated?: (folder: Folder) => void;
+  onUpdated?: (folder: Folder) => void;
+  onDeleted?: (id: string) => void;
 }
 
 export function FolderModal({
   open,
   onClose,
   groupId,
-  folders,
   editFolder,
   onCreated,
   onUpdated,
   onDeleted,
-}: FolderModalProps) {
+}: FolderPopupProps) {
   const { t } = useI18n();
   const isEditing = !!editFolder;
+
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("📁");
-  const [color, setColor] = useState(FOLDER_COLORS[0]);
+  const [color, setColor] = useState(FOLDER_COLORS[0].color);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [view, setView] = useState<"list" | "edit">("list");
+
+  const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!open) {
-      setView("list");
-      return;
-    }
+    if (!open) return;
     if (editFolder) {
       setName(editFolder.name);
       setIcon(editFolder.icon);
       setColor(editFolder.backgroundColor);
-      setView("edit");
+    } else {
+      setName("");
+      setIcon("📁");
+      setColor(FOLDER_COLORS[0].color);
     }
+    setError("");
+    setTimeout(() => nameRef.current?.focus(), 30);
   }, [open, editFolder]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   const handleSave = async () => {
     setError("");
     if (!name.trim()) return setError(t("folderNameRequired"));
     setLoading(true);
     try {
-      const isEdit = view === "edit" && isEditing;
-      const url = isEdit ? `/api/folders/${editFolder!.id}` : "/api/folders";
-      const method = isEdit ? "PATCH" : "POST";
-      const body = isEdit
-        ? { name, icon, backgroundColor: color }
-        : { groupId, name, icon, backgroundColor: color };
+      const url = isEditing ? `/api/folders/${editFolder!.id}` : "/api/folders";
+      const method = isEditing ? "PATCH" : "POST";
+      const body = isEditing
+        ? { name: name.trim(), icon, backgroundColor: color }
+        : { groupId, name: name.trim(), icon, backgroundColor: color };
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error((await res.json()).error);
+
       const result = await res.json();
-      isEdit ? onUpdated(result) : onCreated(result);
-      setView("list");
+      isEditing ? onUpdated?.(result) : onCreated?.(result);
+      onClose();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
@@ -108,143 +119,119 @@ export function FolderModal({
     }
   };
 
-  const handleDelete = async (folder: Folder) => {
-    if (!confirm(t("deleteFolderConfirm").replace("{name}", folder.name))) return;
-    await fetch(`/api/folders/${folder.id}`, { method: "DELETE" });
-    onDeleted(folder.id);
+  const handleDelete = async () => {
+    if (!editFolder) return;
+    if (!confirm(t("deleteFolderConfirm").replace("{name}", editFolder.name))) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/folders/${editFolder.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete folder");
+      onDeleted?.(editFolder.id);
+      onClose();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={view === "list" ? t("folders") : isEditing ? t("editFolder") : t("newFolder")}
+      title={isEditing ? t("editFolder") : t("newFolder")}
       size="sm"
       footer={
-        view === "list" ? (
-          <Button
-            onClick={() => {
-              setName("");
-              setIcon("📁");
-              setColor(FOLDER_COLORS[0]);
-              setView("edit");
-            }}
-          >
-            + {t("newFolder")}
-          </Button>
-        ) : (
-          <>
-            <Button variant="secondary" onClick={() => setView("list")} disabled={loading}>
-              {t("back")}
+        <div className="flex flex-col w-full gap-2">
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={onClose} disabled={loading} className="flex-1">
+              {t("cancel")}
             </Button>
-            <Button onClick={handleSave} disabled={loading}>
-              {loading ? t("saving") : t("save")}
+            <Button onClick={handleSave} disabled={loading} className="flex-1">
+              {loading ? t("saving") : t("done")}
             </Button>
-          </>
-        )
+          </div>
+          {isEditing && (
+            <button
+              onClick={handleDelete}
+              disabled={loading}
+              className="text-[11px] text-bill hover:underline py-1"
+            >
+              {t("deleteFolder")}
+            </button>
+          )}
+        </div>
       }
     >
-      {view === "list" ? (
-        <div className="space-y-1.5">
-          {folders.length === 0 && (
-            <p className="text-sm text-text-muted text-center py-4">{t("noFoldersYet")}</p>
-          )}
-          {folders.map((f) => (
-            <div
-              key={f.id}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-elevated border border-border-subtle"
-            >
-              <div
-                className="w-6 h-6 rounded-md flex items-center justify-center text-sm"
-                style={{ backgroundColor: f.backgroundColor }}
-              >
-                {f.icon}
-              </div>
-              <span className="flex-1 text-sm text-text-primary">{f.name}</span>
-              <button
-                onClick={() => handleDelete(f)}
-                className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-bill transition-colors"
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {error && (
-            <div className="text-sm text-bill bg-bill-bg border border-bill-border rounded-lg px-3 py-2">
-              {error}
-            </div>
-          )}
-          <Input
-            label={t("folderName")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t("folderNamePlaceholder")}
-            autoFocus
-          />
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-text-secondary">
-              {t("folderIcon")}
-            </label>
-            <div className="grid grid-cols-8 gap-1.5">
-              {FOLDER_ICONS.map((em) => (
-                <button
-                  key={em}
-                  onClick={() => setIcon(em)}
-                  className={cn(
-                    "w-8 h-8 flex items-center justify-center rounded-lg text-base transition-all",
-                    icon === em ? "bg-accent-dim ring-1 ring-accent" : "bg-elevated hover:bg-hover",
-                  )}
-                >
-                  {em}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-text-secondary">
-              {t("folderColor")}
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {FOLDER_COLORS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={cn(
-                    "w-8 h-8 rounded-lg border-2 transition-all",
-                    color === c ? "border-accent scale-110" : "border-border-default",
-                  )}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-              <label
-                className={cn(
-                  "w-8 h-8 rounded-lg border-2 cursor-pointer overflow-hidden",
-                  !FOLDER_COLORS.includes(color) ? "border-accent" : "border-border-default",
-                )}
-              >
-                <input
-                  type="color"
-                  className="opacity-0 w-full h-full cursor-pointer"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                />
-              </label>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 bg-elevated rounded-xl border border-border-subtle">
-            <div
-              className="w-6 h-6 rounded-md flex items-center justify-center text-sm"
-              style={{ backgroundColor: color }}
-            >
-              {icon}
-            </div>
-            <span className="text-sm text-text-primary">{name || t("folderName")}</span>
-          </div>
+      {error && (
+        <div className="bg-bill-bg border border-bill-border rounded-lg px-3 py-2 text-sm text-bill">
+          {error}
         </div>
       )}
+
+      {/* Name */}
+      <Input
+        ref={nameRef}
+        label={t("folderName")}
+        placeholder={t("folderNamePlaceholder")}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") handleSave();
+        }}
+        autoFocus
+      />
+
+      {/* Color swatches */}
+      <div className="space-y-1">
+        <label className="block text-xs font-medium text-text-secondary">{t("folderColor")}</label>
+        <div className="flex flex-wrap gap-1.5">
+          {FOLDER_COLORS.map((c) => (
+            <button
+              key={c.color}
+              onClick={() => setColor(c.color)}
+              className={cn(
+                "w-7 h-7 rounded-lg border-2 transition-all",
+                color === c.color
+                  ? "border-accent scale-110"
+                  : "border-border-default hover:scale-105",
+              )}
+              style={{ backgroundColor: c.preview }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Preview */}
+      <label className="block text-xs font-medium text-text-secondary">{t("preview")}</label>
+      <div
+        className="rounded-2xl border border-border-default shadow-sm transition-all duration-150"
+        style={{ backgroundColor: color.split(",")[0] }}
+      >
+        <div className="flex items-center gap-2 px-3 py-2.5 select-none">
+          <div className="flex-shrink-0 text-text-muted p-0.5 -ml-1">
+            <GripVertical size={14} />
+          </div>
+
+          <div className="flex-1 flex items-center gap-1.5 min-w-0">
+            {color.split(",")[1] && (
+              <div
+                className="w-8 h-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: color.split(",")[1] }}
+              />
+            )}
+            <span className="text-sm font-semibold text-text-primary truncate">
+              {name || t("folderName")}
+            </span>
+          </div>
+
+          <div className="text-sm font-semibold text-text-muted tabular-nums flex-shrink-0">
+            $0.00
+          </div>
+
+          <ChevronDown size={14} className="text-text-muted flex-shrink-0" />
+        </div>
+      </div>
     </Modal>
   );
 }

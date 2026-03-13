@@ -43,6 +43,7 @@ export function FolderCard({
           ? "border-accent shadow-lg opacity-80 ring-1 ring-accent/30"
           : "border-border-default shadow-sm",
       )}
+      style={{ backgroundColor: folder.backgroundColor.split(",")[0] }}
     >
       {/* ── Header ── */}
       <div
@@ -59,18 +60,16 @@ export function FolderCard({
           <GripVertical size={14} />
         </div>
 
-        {/* Folder icon */}
-        <div
-          className="w-6 h-6 rounded-lg flex items-center justify-center text-sm flex-shrink-0 select-none"
-          style={{ backgroundColor: folder.backgroundColor }}
-        >
-          {folder.icon}
-        </div>
-
         {/* Name */}
-        <span className="flex-1 text-sm font-semibold text-text-primary truncate">
-          {folder.name}
-        </span>
+        <div className="flex-1 flex items-center gap-1.5 min-w-0">
+          {folder.backgroundColor.split(",")[1] && (
+            <div
+              className="w-8 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: folder.backgroundColor.split(",")[1] }}
+            />
+          )}
+          <span className="text-sm font-semibold text-text-primary truncate">{folder.name}</span>
+        </div>
 
         {/* Total */}
         <span
@@ -117,18 +116,27 @@ export function FolderCard({
 // ── Drag overlay version (rendered while dragging) ────────────────────────────
 export function FolderCardOverlay({ folder, total }: { folder: Folder; total: number }) {
   return (
-    <div className="rounded-2xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90">
+    <div
+      className="rounded-2xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90"
+      style={{ backgroundColor: folder.backgroundColor.split(",")[0] }}
+    >
       <div className="flex items-center gap-2 px-3 py-2.5 select-none">
         <GripVertical size={14} className="text-text-muted flex-shrink-0" />
         <div
           className="w-6 h-6 rounded-lg flex items-center justify-center text-sm flex-shrink-0 select-none"
-          style={{ backgroundColor: folder.backgroundColor }}
+          style={{ backgroundColor: folder.backgroundColor.split(",")[0] }}
         >
           {folder.icon}
         </div>
-        <span className="flex-1 text-sm font-semibold text-text-primary truncate">
-          {folder.name}
-        </span>
+        <div className="flex-1 flex items-center gap-1.5 min-w-0">
+          {folder.backgroundColor.split(",")[1] && (
+            <div
+              className="w-3 h-3 rounded-sm flex-shrink-0"
+              style={{ backgroundColor: folder.backgroundColor.split(",")[1] }}
+            />
+          )}
+          <span className="text-sm font-semibold text-text-primary truncate">{folder.name}</span>
+        </div>
         <span
           className={cn(
             "text-sm font-semibold tabular-nums",
