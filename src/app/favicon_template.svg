@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="63.999977"
+   height="63.999977"
+   viewBox="0 0 16.933327 16.933327"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   sodipodi:docname="favicon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="5.3451178"
+     inkscape:cx="11.31874"
+     inkscape:cy="47.145827"
+     inkscape:window-width="1920"
+     inkscape:window-height="961"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-120.94432,-150.02383)">
+    <path
+       style="font-size:16.0437px;font-family:metropolis;-inkscape-font-specification:metropolis;fill:#c83771;stroke-width:0.100001"
+       d="m 128.41095,153.10927 c -1.21822,0 -2.25462,0.49092 -3.00009,1.32731 v -1.10913 h -3.5092 v 12.52766 h 3.5092 v -4.23649 c 0.74547,0.83638 1.78187,1.32731 3.00009,1.32731 2.52734,0 4.30922,-2.03642 4.30922,-4.92742 0,-2.87282 -1.78188,-4.90924 -4.30922,-4.90924 z m -1.10913,6.92748 c -1.10912,0 -1.89096,-0.83639 -1.89096,-2.01824 0,-1.16368 0.78184,-2.00006 1.89096,-2.00006 1.21822,0 2.0728,0.83638 2.0728,2.00006 0,1.18185 -0.85458,2.01824 -2.0728,2.01824 z"
+       id="text1"
+       aria-label="planifik!"
+       sodipodi:nodetypes="sccccccssssssss" />
+    <path
+       d="m 133.68383,158.6352 h 2.36371 l 0.76366,-7.50931 h -3.90921 z m 1.18186,5.20016 c 1.1273,0 2.05461,-0.96366 2.05461,-2.14552 0,-1.09095 -0.92731,-2.05461 -2.05461,-2.05461 -1.21822,0 -2.14552,0.96366 -2.14552,2.05461 0,1.18186 0.9273,2.14552 2.14552,2.14552 z"
+       style="font-size:16.0437px;font-family:metropolis;-inkscape-font-specification:metropolis;fill:#c83771;stroke-width:0.100001"
+       id="path1" />
+  </g>
+</svg>

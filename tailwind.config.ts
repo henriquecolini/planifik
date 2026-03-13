@@ -33,9 +33,9 @@ const config: Config = {
 
         // Accent — a calm, trustworthy blue
         accent: {
-          DEFAULT: "#2563EB",
-          light: "#3B82F6",
-          dim: "#DBEAFE",
+          DEFAULT: "#c83771ff",
+          light: "#cd4c7f",
+          dim: "#ffd8e8",
         },
 
         // Income (green)

@@ -49,7 +49,8 @@ const translations = {
     en: "Tap + to add your first item",
     "pt-BR": "Toque em + para adicionar o primeiro item",
   },
-  addItem: { en: "Add Item", "pt-BR": "Adicionar" },
+  addItem: { en: "Add Item", "pt-BR": "Adicionar Item" },
+  addFolder: { en: "Add Folder", "pt-BR": "Adicionar Pasta" },
   unfiled: { en: "Unfiled", "pt-BR": "Sem pasta" },
 
   // ── Item actions ──────────────────────────────────────────────────────────

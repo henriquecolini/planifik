@@ -42,7 +42,7 @@ export function BalanceCounter({ total, pendingCount }: BalanceCounterProps) {
   const isPositive = displayed >= 0;
 
   return (
-    <div className="px-4 pt-6 pb-5 max-w-2xl mx-auto">
+    <div className="px-4 pt-6 pb-5 max-w-2xl mx-auto flex flex-col items-center justify-center">
       <p className="text-xs font-medium text-text-muted uppercase tracking-widest mb-1">
         {t("netBalance")}
       </p>

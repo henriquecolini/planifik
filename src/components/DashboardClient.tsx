@@ -49,14 +49,14 @@ import { SortableFolder } from "./SortableFolder";
 import { FolderCardOverlay } from "./FolderCard";
 import { ItemCardOverlay } from "./ItemCard";
 
-import { currentMonth, toMonthString } from "@/lib/utils";
+import { currentMonth, formatMonth, toMonthString } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import type { DeleteMode, Folder, Group, Item, ItemsApiResponse, PaymentMethod } from "@/types";
 
 export function DashboardClient() {
   const { status } = useSession();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -420,135 +420,145 @@ export function DashboardClient() {
 
   return (
     <div className="min-h-screen bg-base">
-      <TopBar
-        groups={groups}
-        activeGroup={activeGroup}
-        onGroupChange={setActiveGroup}
-        onCreateFolder={() => {
-          setEditFolder(null);
-          setFolderModalOpen(true);
-        }}
-        onCreateGroup={() => setGroupModal("create")}
-        onManageGroup={() => setGroupModal("manage")}
-      />
+      <div className="sticky top-0">
+        <TopBar
+          groups={groups}
+          activeGroup={activeGroup}
+          onGroupChange={setActiveGroup}
+          onCreateGroup={() => setGroupModal("create")}
+          onManageGroup={() => setGroupModal("manage")}
+        />
 
-      <div className="bg-base/80 backdrop-blur-sm sticky top-14 z-20">
-        <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
+        <div className="bg-base/80 backdrop-blur-sm top-14 z-20">
+          <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
+        </div>
       </div>
 
       <main className="max-w-2xl mx-auto px-4 pb-32">
         {/* Balance — total comes from server, no frontend arithmetic */}
         <BalanceCounter total={monthTotal} pendingCount={pendingCount} />
 
-        {/* Empty state */}
-        {!loading && items.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-5xl mb-4 select-none">💸</div>
-            <p className="text-text-secondary font-medium">
-              {t("noItemsForMonth")} {monthString}
-            </p>
-            <p className="text-text-muted text-sm mt-1">{t("tapToAdd")}</p>
-          </div>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 size={20} className="animate-spin text-text-muted" />
-          </div>
-        )}
-
-        {/* Item list, organized by folder */}
-        {!loading && items.length > 0 && (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={
-                activeType === "folder"
-                  ? folderIds
-                  : activeType === "item"
-                    ? itemIds
-                    : allSortableIds
-              }
-              strategy={verticalListSortingStrategy}
+        {loading ? (
+          <>
+            {/* Loading */}
+            <div className="flex items-center justify-center py-20">
+              <Loader2 size={20} className="animate-spin text-text-muted" />
+            </div>
+          </>
+        ) : items.length === 0 && folders.length === 0 ? (
+          <>
+            {/* Empty state */}
+            <div className="text-center py-20">
+              <div className="text-5xl mb-4 select-none">💸</div>
+              <p className="text-text-secondary font-medium">
+                {t("noItemsForMonth")} {formatMonth(selectedMonth, lang)}
+              </p>
+              <p className="text-text-muted text-sm mt-1">{t("tapToAdd")}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Item list, organized by folder */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
             >
-              <div className="space-y-5 mt-1">
-                {folders.map((folder) => (
+              <SortableContext
+                items={
+                  activeType === "folder"
+                    ? folderIds
+                    : activeType === "item"
+                      ? itemIds
+                      : allSortableIds
+                }
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-5 mt-1">
+                  {folders.map((folder) => (
+                    <SortableFolder
+                      key={folder.id}
+                      folder={folder}
+                      items={itemsByFolder.get(folder.id) ?? []}
+                      total={folderTotals[folder.id] ?? 0}
+                      month={monthString}
+                      activeType={activeType}
+                      isCollapsed={collapsedFolderIds.has(folder.id)}
+                      onToggleCollapse={() => toggleFolderCollapse(folder.id)}
+                      onPay={handlePay}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onUnpay={handleUnpay}
+                      onAmountSaved={handleAmountSaved}
+                      onEditFolder={(f) => {
+                        setEditFolder(f);
+                        setFolderModalOpen(true);
+                      }}
+                    />
+                  ))}
+
+                  {/* Unfiled items — no header */}
                   <SortableFolder
-                    key={folder.id}
-                    folder={folder}
-                    items={itemsByFolder.get(folder.id) ?? []}
-                    total={folderTotals[folder.id] ?? 0}
+                    folder={null}
+                    items={itemsByFolder.get(null) ?? []}
+                    total={folderTotals["__unfiled__"] ?? 0}
                     month={monthString}
                     activeType={activeType}
-                    isCollapsed={collapsedFolderIds.has(folder.id)}
-                    onToggleCollapse={() => toggleFolderCollapse(folder.id)}
+                    isCollapsed={false}
+                    onToggleCollapse={() => {}}
                     onPay={handlePay}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onUnpay={handleUnpay}
                     onAmountSaved={handleAmountSaved}
-                    onEditFolder={(f) => {
-                      setEditFolder(f);
-                      setFolderModalOpen(true);
-                    }}
                   />
-                ))}
+                </div>
+              </SortableContext>
 
-                {/* Unfiled items — no header */}
-                <SortableFolder
-                  folder={null}
-                  items={itemsByFolder.get(null) ?? []}
-                  total={folderTotals["__unfiled__"] ?? 0}
-                  month={monthString}
-                  activeType={activeType}
-                  isCollapsed={false}
-                  onToggleCollapse={() => {}}
-                  onPay={handlePay}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onUnpay={handleUnpay}
-                  onAmountSaved={handleAmountSaved}
-                />
-              </div>
-            </SortableContext>
-
-            <DragOverlay
-              adjustScale={false}
-              dropAnimation={{
-                sideEffects: defaultDropAnimationSideEffects({
-                  styles: { active: { opacity: "0.5" } },
-                }),
-              }}
-            >
-              {activeId ? (
-                activeType === "folder" ? (
-                  <FolderCardOverlay
-                    folder={folders.find((f) => f.id === activeId)!}
-                    total={folderTotals[activeId] ?? 0}
-                  />
-                ) : (
-                  <ItemCardOverlay item={items.find((i) => i.id === activeId)!} />
-                )
-              ) : null}
-            </DragOverlay>
-          </DndContext>
+              <DragOverlay
+                adjustScale={false}
+                dropAnimation={{
+                  sideEffects: defaultDropAnimationSideEffects({
+                    styles: { active: { opacity: "0.5" } },
+                  }),
+                }}
+              >
+                {activeId ? (
+                  activeType === "folder" ? (
+                    <FolderCardOverlay
+                      folder={folders.find((f) => f.id === activeId)!}
+                      total={folderTotals[activeId] ?? 0}
+                    />
+                  ) : (
+                    <ItemCardOverlay item={items.find((i) => i.id === activeId)!} />
+                  )
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          </>
         )}
       </main>
 
       {/* Floating add button */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30">
+      <div className="fixed bottom-8 z-30 w-full flex justify-center gap-4">
+        <button
+          onClick={() => {
+            setEditFolder(null);
+            setFolderModalOpen(true);
+          }}
+          className="flex items-center gap-2 bg-base hover:bg-accent-dim text-accent border-accent border-2 text-sm font-semibold pl-4 pr-5 h-12 rounded-full transition-all duration-150 active:scale-95"
+        >
+          <Plus size={18} strokeWidth={2.5} />
+          {t("addFolder")}
+        </button>
         <button
           onClick={() => {
             setEditItem(null);
             setAddItemOpen(true);
           }}
-          className="flex items-center gap-2 bg-accent hover:bg-accent-light text-white text-sm font-semibold pl-4 pr-5 h-12 rounded-2xl shadow-lg shadow-accent/30 transition-all duration-150 active:scale-95"
+          className="flex items-center gap-2 bg-accent hover:bg-accent-light text-white text-sm font-semibold pl-4 pr-5 h-12 rounded-full transition-all duration-150 active:scale-95"
         >
           <Plus size={18} strokeWidth={2.5} />
           {t("addItem")}

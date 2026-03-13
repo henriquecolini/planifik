@@ -16,34 +16,36 @@ export function MonthSelector({ value, onChange }: MonthSelectorProps) {
   const isCurrentMonth = sameMonth(value, todayMonth);
 
   return (
-    <div className="flex items-center justify-center gap-2 py-2.5 px-4 border-b border-border-subtle bg-white relative max-w-2xl mx-auto w-full">
-      <button
-        onClick={() => onChange(todayMonth)}
-        className={cn(
-          "absolute left-4 text-xs font-medium text-accent transition-all duration-150",
-          isCurrentMonth ? "opacity-0 pointer-events-none" : "opacity-100",
-        )}
-      >
-        {t("today")}
-      </button>
+    <div className="border-b border-border-subtle bg-white w-full">
+      <div className="flex items-center justify-center gap-2 py-2.5 px-4 max-w-2xl relative mx-auto">
+        <button
+          onClick={() => onChange(todayMonth)}
+          className={cn(
+            "absolute left-4 text-xs font-medium text-accent transition-all duration-150",
+            isCurrentMonth ? "opacity-0 pointer-events-none" : "opacity-100",
+          )}
+        >
+          {t("today")}
+        </button>
 
-      <button
-        onClick={() => onChange(addMonths(value, -1))}
-        className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
-      >
-        <ChevronLeft size={15} />
-      </button>
+        <button
+          onClick={() => onChange(addMonths(value, -1))}
+          className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
+        >
+          <ChevronLeft size={15} />
+        </button>
 
-      <span className="min-w-[96px] text-center text-sm font-semibold text-text-primary no-select capitalize">
-        {formatMonth(value, lang)}
-      </span>
+        <span className="min-w-[96px] text-center text-sm font-semibold text-text-primary no-select">
+          {formatMonth(value, lang)}
+        </span>
 
-      <button
-        onClick={() => onChange(addMonths(value, 1))}
-        className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
-      >
-        <ChevronRight size={15} />
-      </button>
+        <button
+          onClick={() => onChange(addMonths(value, 1))}
+          className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
+        >
+          <ChevronRight size={15} />
+        </button>
+      </div>
     </div>
   );
 }

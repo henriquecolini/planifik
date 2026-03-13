@@ -4,6 +4,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import Image from "next/image";
 
 export default function LoginPage() {
   const { status } = useSession();
@@ -32,11 +33,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-base flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white border border-border-default shadow-sm mb-4">
-            <span className="text-2xl">💸</span>
-          </div>
-          <h1 className="text-2xl font-bold text-text-primary">Planifik</h1>
-          <p className="text-text-secondary mt-1 text-sm">Your personal finance companion</p>
+          <Image src="/logo.svg" alt="Logo" width={200} height={60} />
         </div>
 
         <div className="bg-white border border-border-default rounded-2xl p-6 shadow-sm">
