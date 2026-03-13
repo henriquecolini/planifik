@@ -420,7 +420,7 @@ export function DashboardClient() {
 
   return (
     <div className="min-h-screen bg-base">
-      <div className="sticky top-0">
+      <div className="sticky top-0 z-20">
         <TopBar
           groups={groups}
           activeGroup={activeGroup}
