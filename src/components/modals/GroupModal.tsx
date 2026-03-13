@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserMinus } from "lucide-react";
+import { MdPersonRemove } from "react-icons/md";
 import { Button, Input, Modal } from "@/components/ui/index";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
@@ -178,7 +178,7 @@ export function GroupModal({
                   onClick={() => handleRemoveMember(m.userId)}
                   className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-bill transition-colors"
                 >
-                  <UserMinus size={13} />
+                  <MdPersonRemove size={13} />
                 </button>
               )}
             </div>

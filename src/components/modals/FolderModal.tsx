@@ -4,7 +4,7 @@
 // Replaces the previous inline popup.
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, GripVertical } from "lucide-react";
+import { MdExpandMore, MdDragIndicator } from "react-icons/md";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { Button, Modal, Input } from "@/components/ui";
@@ -214,7 +214,7 @@ export function FolderModal({
       >
         <div className="flex items-center gap-2 px-3 py-2.5 select-none">
           <div className="flex-shrink-0 text-text-muted p-0.5 -ml-1">
-            <GripVertical size={14} />
+            <MdDragIndicator size={14} />
           </div>
 
           <div className="flex-1 flex items-center gap-1.5 min-w-0">
@@ -233,7 +233,7 @@ export function FolderModal({
             $0.00
           </div>
 
-          <ChevronDown size={14} className="text-text-muted flex-shrink-0" />
+          <MdExpandMore size={14} className="text-text-muted flex-shrink-0" />
         </div>
       </div>
     </Modal>

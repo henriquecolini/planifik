@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { MdClose } from "react-icons/md";
 import { useEffect, forwardRef } from "react";
 
 // ─── Button ───────────────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }: M
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
           >
-            <X size={15} />
+            <MdClose size={15} />
           </button>
         </div>
 

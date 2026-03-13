@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { MdAdd, MdCreateNewFolder, MdRefresh } from "react-icons/md";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -225,7 +225,7 @@ export function DashboardClient() {
   if (status === "loading" || status === "unauthenticated") {
     return (
       <div className="min-h-screen bg-base flex items-center justify-center">
-        <Loader2 size={24} className="animate-spin text-text-muted" />
+        <MdRefresh size={24} className="animate-spin text-text-muted" />
       </div>
     );
   }
@@ -253,7 +253,7 @@ export function DashboardClient() {
           <>
             {/* Loading */}
             <div className="flex items-center justify-center py-20">
-              <Loader2 size={20} className="animate-spin text-text-muted" />
+              <MdRefresh size={20} className="animate-spin text-text-muted" />
             </div>
           </>
         ) : items["__unfiled__"].length === 0 && folderIds.length === 0 ? (
@@ -364,7 +364,7 @@ export function DashboardClient() {
           }}
           className="flex items-center gap-2 bg-base hover:bg-elevated border-border-default border text-sm font-semibold pl-4 pr-5 h-12 rounded-full transition-all duration-150 active:scale-95"
         >
-          <Plus size={18} strokeWidth={2.5} /> {t("addFolder")}
+          <MdCreateNewFolder size={18} /> {t("addFolder")}
         </button>
         <button
           onClick={() => {
@@ -373,7 +373,7 @@ export function DashboardClient() {
           }}
           className="flex items-center gap-2 bg-accent hover:bg-accent-light text-white text-sm font-semibold pl-4 pr-5 h-12 rounded-full transition-all duration-150 active:scale-95"
         >
-          <Plus size={18} strokeWidth={2.5} /> {t("addItem")}
+          <MdAdd size={18} /> {t("addItem")}
         </button>
       </div>
       {/* Modals */}

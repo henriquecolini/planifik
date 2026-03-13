@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Check, ChevronDown, FolderPlus, Globe, LogOut, Plus, Users } from "lucide-react";
+import { MdCheck, MdExpandMore, MdLanguage, MdLogout, MdAdd, MdPeople } from "react-icons/md";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { type Lang, useI18n } from "@/lib/i18n";
@@ -53,7 +53,7 @@ export function TopBar({
             <span className="text-sm font-semibold text-text-primary">
               {activeGroup?.name ?? t("selectGroup")}
             </span>
-            <ChevronDown
+            <MdExpandMore
               size={13}
               className={cn("text-text-muted transition-transform", groupMenuOpen && "rotate-180")}
             />
@@ -73,7 +73,7 @@ export function TopBar({
                   >
                     <span className="truncate">{g.name}</span>
                     {g.id === activeGroup?.id && (
-                      <Check size={13} className="text-accent flex-shrink-0" />
+                      <MdCheck size={13} className="text-accent flex-shrink-0" />
                     )}
                   </button>
                 ))}
@@ -85,7 +85,7 @@ export function TopBar({
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:bg-elevated transition-colors"
                   >
-                    <Users size={13} /> {t("manageGroup")}
+                    <MdPeople size={13} /> {t("manageGroup")}
                   </button>
                   <button
                     onClick={() => {
@@ -94,7 +94,7 @@ export function TopBar({
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:bg-elevated transition-colors"
                   >
-                    <Plus size={13} /> {t("newGroup")}
+                    <MdAdd size={13} /> {t("newGroup")}
                   </button>
                 </div>
               </div>
@@ -141,7 +141,7 @@ export function TopBar({
               {/* Language switcher */}
               <div className="px-3 py-2.5 border-b border-border-subtle">
                 <div className="flex items-center gap-2 mb-2">
-                  <Globe size={13} className="text-text-muted" />
+                  <MdLanguage size={13} className="text-text-muted" />
                   <span className="text-xs font-medium text-text-secondary">{t("language")}</span>
                 </div>
                 <div className="flex gap-1.5">
@@ -167,7 +167,7 @@ export function TopBar({
                 onClick={() => signOut({ callbackUrl: "/login" })}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-bill hover:bg-bill-bg transition-colors"
               >
-                <LogOut size={14} /> {t("signOut")}
+                <MdLogout size={14} /> {t("signOut")}
               </button>
             </div>
           )}

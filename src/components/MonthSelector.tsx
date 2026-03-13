@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { addMonths, cn, currentMonth, formatMonth, sameMonth } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import type { MonthSelection } from "@/types";
@@ -32,7 +32,7 @@ export function MonthSelector({ value, onChange }: MonthSelectorProps) {
           onClick={() => onChange(addMonths(value, -1))}
           className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
         >
-          <ChevronLeft size={15} />
+          <MdChevronLeft size={15} />
         </button>
 
         <span className="min-w-[96px] text-center text-sm font-semibold text-text-primary no-select">
@@ -43,7 +43,7 @@ export function MonthSelector({ value, onChange }: MonthSelectorProps) {
           onClick={() => onChange(addMonths(value, 1))}
           className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
         >
-          <ChevronRight size={15} />
+          <MdChevronRight size={15} />
         </button>
       </div>
     </div>

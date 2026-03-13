@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, GripVertical, MoreHorizontal, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import {
+  MdCheck,
+  MdDragIndicator,
+  MdEditSquare,
+  MdMoreVert,
+  MdRotateLeft,
+  MdDelete,
+} from "react-icons/md";
 import { cn, dueDateInfo, getDueDateForMonth } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { BankIcon, ItemIcon } from "./Icons";
@@ -301,7 +308,7 @@ export function ItemCard({
                 : "bg-bill-bg text-bill border-bill-border hover:bg-red-100",
           )}
         >
-          {isPaid && <Check size={11} />}
+          {isPaid && <MdCheck size={11} />}
           {isPaid ? (isIncome ? t("received") : t("paid")) : isIncome ? t("receive") : t("pay")}
         </button>
       )}
@@ -315,7 +322,7 @@ export function ItemCard({
           }}
           className="w-6 h-6 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
         >
-          <MoreHorizontal size={14} />
+          <MdMoreVert size={16} />
         </button>
 
         {menuOpen && (
@@ -330,7 +337,7 @@ export function ItemCard({
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-elevated"
               >
-                <Pencil size={13} /> {t("edit")}
+                <MdEditSquare size={13} /> {t("edit")}
               </button>
 
               {isPaid && (
@@ -341,7 +348,7 @@ export function ItemCard({
                   }}
                   className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-elevated"
                 >
-                  <RotateCcw size={13} /> {t("markUnpaid")}
+                  <MdRotateLeft size={13} /> {t("markUnpaid")}
                 </button>
               )}
 
@@ -352,7 +359,7 @@ export function ItemCard({
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-bill hover:bg-bill-bg"
               >
-                <Trash2 size={13} /> {t("delete")}
+                <MdDelete size={13} /> {t("delete")}
               </button>
             </div>
           </>

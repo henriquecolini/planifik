@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Pencil } from "lucide-react";
+import { MdEditSquare, MdExpandMore } from "react-icons/md";
 import { cn } from "@/lib/utils";
 import type { Folder, Item } from "@/types";
 import { useSortable } from "@dnd-kit/react/sortable";
@@ -65,7 +65,7 @@ export function FolderCard({
         onClick={onToggleCollapse}
       >
         {/* Chevron */}
-        <ChevronDown
+        <MdExpandMore
           size={14}
           className={cn(
             "text-text-muted transition-transform flex-shrink-0",
@@ -98,7 +98,7 @@ export function FolderCard({
             }}
             className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-all flex-shrink-0"
           >
-            <Pencil size={11} />
+            <MdEditSquare size={16} />
           </button>
         )}
       </div>
