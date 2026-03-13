@@ -41,13 +41,13 @@ export function FolderCard({
         "rounded-2xl border bg-white transition-all duration-150",
         isDragging
           ? "border-accent shadow-lg opacity-80 ring-1 ring-accent/30"
-          : "border-border-default shadow-sm",
+          : "border-border-default hover:shadow-sm",
       )}
       style={{ backgroundColor: folder.backgroundColor.split(",")[0] }}
     >
       {/* ── Header ── */}
       <div
-        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none group/header rounded-2xl"
+        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none group/header"
         onClick={onToggleCollapse}
       >
         {/* Drag handle */}

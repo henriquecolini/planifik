@@ -174,12 +174,12 @@ export function ItemCard({
   return (
     <div
       className={cn(
-        "group relative flex items-center gap-3 pl-2.5 pr-3.5 py-3 rounded-xl border transition-all duration-150",
+        "group relative flex items-center gap-3 pl-2.5 pr-3.5 py-3 rounded-2xl border transition-all duration-150",
         isDragging
           ? "border-accent shadow-lg opacity-80 ring-1 ring-accent/30 bg-white"
           : isPaid
             ? "bg-gray-50 border-border-subtle item-paid"
-            : "bg-white border-border-subtle hover:border-border-default hover:shadow-sm",
+            : "bg-white border-border-default hover:shadow-sm",
       )}
     >
       {/* Drag handle */}
@@ -366,7 +366,7 @@ export function ItemCardOverlay({ item }: { item: Item }) {
   const isBank = isCreditCard || isCheckingAccount;
 
   return (
-    <div className="flex items-center gap-3 px-3 py-3 rounded-xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90">
+    <div className="flex items-center gap-3 px-3 py-3 rounded-2xl border border-accent bg-white shadow-xl ring-1 ring-accent/30 opacity-90">
       <GripVertical size={14} className="text-text-muted flex-shrink-0" />
 
       <div className="select-none pointer-events-none flex-shrink-0">

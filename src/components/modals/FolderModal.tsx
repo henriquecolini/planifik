@@ -185,19 +185,23 @@ export function FolderModal({
       {/* Color swatches */}
       <div className="space-y-1">
         <label className="block text-xs font-medium text-text-secondary">{t("folderColor")}</label>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap justify-stretch gap-1.5">
           {FOLDER_COLORS.map((c) => (
             <button
               key={c.color}
               onClick={() => setColor(c.color)}
               className={cn(
-                "w-7 h-7 rounded-lg border-2 transition-all",
+                "flex-1 h-7 rounded-full border-2 p-0.5 transition-all",
                 color === c.color
                   ? "border-accent scale-110"
                   : "border-border-default hover:scale-105",
               )}
-              style={{ backgroundColor: c.preview }}
-            />
+            >
+              <div
+                className="w-full h-full rounded-full"
+                style={{ backgroundColor: c.preview }}
+              ></div>
+            </button>
           ))}
         </div>
       </div>

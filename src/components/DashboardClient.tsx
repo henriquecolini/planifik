@@ -548,7 +548,7 @@ export function DashboardClient() {
             setEditFolder(null);
             setFolderModalOpen(true);
           }}
-          className="flex items-center gap-2 bg-base hover:bg-accent-dim text-accent border-accent border-2 text-sm font-semibold pl-4 pr-5 h-12 rounded-full transition-all duration-150 active:scale-95"
+          className="flex items-center gap-2 bg-base hover:bg-elevated border-border-default border text-sm font-semibold pl-4 pr-5 h-12 rounded-full transition-all duration-150 active:scale-95"
         >
           <Plus size={18} strokeWidth={2.5} />
           {t("addFolder")}
