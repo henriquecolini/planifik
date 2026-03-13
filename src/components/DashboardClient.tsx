@@ -12,6 +12,7 @@ import AddItemModal from "./modals/AddItemModal";
 import { PayItemModal } from "./modals/PayItemModal";
 import { UnpayModal } from "./modals/UnpayModal";
 import { DeleteConfirmModal } from "./modals/DeleteConfirmModal";
+import { DeleteFolderConfirmModal } from "./modals/DeleteFolderConfirmModal";
 import { FolderModal } from "./modals/FolderModal";
 import { GroupModal } from "./modals/GroupModal";
 
@@ -52,6 +53,7 @@ export function DashboardClient() {
   const [itemToPay, setItemToPay] = useState<Item | null>(null);
   const [itemToUnpay, setItemToUnpay] = useState<Item | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
@@ -121,6 +123,7 @@ export function DashboardClient() {
   const handlePay = useCallback((item: Item) => setItemToPay(item), []);
   const handleEdit = useCallback((item: Item) => setItemToEdit(item), []);
   const handleDelete = useCallback((item: Item) => setItemToDelete(item), []);
+  const handleDeleteFolder = useCallback((folder: Folder) => setFolderToDelete(folder), []);
 
   const handleAmountSaved = useCallback(() => fetchItems(true), [fetchItems]);
   const handleItemCreated = useCallback(() => fetchItems(true), [fetchItems]);
@@ -186,6 +189,15 @@ export function DashboardClient() {
     },
     [itemToDelete, monthString, fetchItems],
   );
+
+  const handleDeleteFolderConfirm = useCallback(async () => {
+    if (!folderToDelete) return;
+
+    await fetch(`/api/folders/${folderToDelete.id}`, { method: "DELETE" });
+
+    setFolderToDelete(null);
+    await fetchItems(true);
+  }, [folderToDelete, fetchItems]);
 
   // ── Effects ────────────────────────────────────────────────────────────────
 
@@ -327,6 +339,7 @@ export function DashboardClient() {
                     setFolderToEdit(folder);
                     setIsFolderModalOpen(true);
                   }}
+                  onDelete={handleDeleteFolder}
                   onPayItem={handlePay}
                   onEditItem={handleEdit}
                   onDeleteItem={handleDelete}
@@ -405,6 +418,12 @@ export function DashboardClient() {
         month={monthString}
         onConfirm={handleDeleteConfirm}
       />
+      <DeleteFolderConfirmModal
+        open={!!folderToDelete}
+        onClose={() => setFolderToDelete(null)}
+        folder={folderToDelete}
+        onConfirm={handleDeleteFolderConfirm}
+      />
       <UnpayModal
         open={!!itemToUnpay}
         onClose={() => setItemToUnpay(null)}
@@ -421,7 +440,6 @@ export function DashboardClient() {
         editFolder={folderToEdit}
         onCreated={(_) => fetchItems()}
         onUpdated={(_) => fetchItems()}
-        onDeleted={(_) => fetchItems()}
       />
       <GroupModal
         open={groupModal !== null}

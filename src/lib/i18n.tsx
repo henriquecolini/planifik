@@ -183,8 +183,12 @@ const translations = {
   folderNameRequired: { en: "Name is required.", "pt-BR": "Nome é obrigatório." },
   noFoldersYet: { en: "No folders yet.", "pt-BR": "Nenhuma pasta ainda." },
   deleteFolderConfirm: {
-    en: `Delete "{name}"? Items will become unfiled.`,
-    "pt-BR": `Excluir "{name}"? Os itens ficarão sem pasta.`,
+    en: `Are you sure you want to delete "{name}"?`,
+    "pt-BR": `Tem certeza que deseja excluir "{name}"?`,
+  },
+  deleteFolderWarning: {
+    en: "The items inside will not be deleted, they will just become unfiled.",
+    "pt-BR": "Os itens dentro não serão excluídos, apenas ficarão sem pasta.",
   },
   preview: { en: "Preview", "pt-BR": "Prévia" },
 

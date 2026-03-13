@@ -44,7 +44,6 @@ interface FolderPopupProps {
   editFolder?: Folder | null;
   onCreated?: (folder: Folder) => void;
   onUpdated?: (folder: Folder) => void;
-  onDeleted?: (id: string) => void;
 }
 
 export function FolderModal({
@@ -54,7 +53,6 @@ export function FolderModal({
   editFolder,
   onCreated,
   onUpdated,
-  onDeleted,
 }: FolderPopupProps) {
   const { t } = useI18n();
   const isEditing = !!editFolder;
@@ -119,22 +117,6 @@ export function FolderModal({
     }
   };
 
-  const handleDelete = async () => {
-    if (!editFolder) return;
-    if (!confirm(t("deleteFolderConfirm").replace("{name}", editFolder.name))) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/folders/${editFolder.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete folder");
-      onDeleted?.(editFolder.id);
-      onClose();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <Modal
       open={open}
@@ -142,24 +124,13 @@ export function FolderModal({
       title={isEditing ? t("editFolder") : t("newFolder")}
       size="sm"
       footer={
-        <div className="flex flex-col w-full gap-2">
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={onClose} disabled={loading} className="flex-1">
-              {t("cancel")}
-            </Button>
-            <Button onClick={handleSave} disabled={loading} className="flex-1">
-              {loading ? t("saving") : t("done")}
-            </Button>
-          </div>
-          {isEditing && (
-            <button
-              onClick={handleDelete}
-              disabled={loading}
-              className="text-[11px] text-bill hover:underline py-1"
-            >
-              {t("deleteFolder")}
-            </button>
-          )}
+        <div className="flex gap-2 w-full">
+          <Button variant="secondary" onClick={onClose} disabled={loading} className="flex-1">
+            {t("cancel")}
+          </Button>
+          <Button onClick={handleSave} disabled={loading} className="flex-1">
+            {loading ? t("saving") : t("done")}
+          </Button>
         </div>
       }
     >

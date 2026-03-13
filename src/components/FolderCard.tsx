@@ -1,14 +1,15 @@
 "use client";
 
-import { MdEditSquare, MdExpandMore } from "react-icons/md";
+import { MdEditSquare, MdExpandMore, MdMoreVert, MdDelete } from "react-icons/md";
 import { cn } from "@/lib/utils";
 import type { Folder, Item } from "@/types";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { CollisionPriority } from "@dnd-kit/abstract";
-import React from "react";
+import React, { useState } from "react";
 import { ColoredCurrency } from "@/components/ColoredCurrency";
 import { ItemCard } from "@/components/ItemCard";
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers";
+import { useI18n } from "@/lib/i18n";
 
 interface FolderCardProps {
   folder: Folder;
@@ -18,6 +19,7 @@ interface FolderCardProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onEdit: (folder: Folder) => void;
+  onDelete: (folder: Folder) => void;
   onPayItem: (item: Item) => void;
   onEditItem: (item: Item) => void;
   onDeleteItem: (item: Item) => void;
@@ -33,12 +35,15 @@ export function FolderCard({
   isCollapsed,
   onToggleCollapse,
   onEdit,
+  onDelete,
   onPayItem,
   onEditItem,
   onDeleteItem,
   onUnpayItem,
   onAmountSavedItem,
 }: FolderCardProps) {
+  const { t } = useI18n();
+  const [menuOpen, setMenuOpen] = useState(false);
   const { ref, isDragging } = useSortable({
     id: folder.id,
     index: dragIndex,
@@ -89,18 +94,48 @@ export function FolderCard({
           <ColoredCurrency value={folder.totalAmount ?? 0} />
         </span>
 
-        {/* Edit button */}
-        {onEdit && (
+        {/* Menu */}
+        <div className="relative">
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onEdit(folder);
+              setMenuOpen((v) => !v);
             }}
-            className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-elevated transition-all flex-shrink-0"
+            className="w-6 h-6 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
           >
-            <MdEditSquare size={16} />
+            <MdMoreVert size={16} />
           </button>
-        )}
+
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
+
+              <div className="absolute right-0 top-8 w-40 bg-white border border-border-default rounded-xl shadow-lg overflow-hidden z-40">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(folder);
+                    setMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-elevated text-left"
+                >
+                  <MdEditSquare size={13} /> {t("edit")}
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(folder);
+                    setMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-bill hover:bg-bill-bg text-left"
+                >
+                  <MdDelete size={13} /> {t("delete")}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* ── Items ── */}
