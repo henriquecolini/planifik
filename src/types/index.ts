@@ -193,6 +193,7 @@ export interface BankInfo {
   name: string;
   color: string;
   textColor?: string;
+  translationKey?: string;
 }
 
 export const BANKS: BankInfo[] = [
@@ -212,6 +213,14 @@ export const BANKS: BankInfo[] = [
   { slug: "pan", name: "Pan", color: "#00a0fdfe", textColor: "#fff" },
   { slug: "neon", name: "Neon", color: "#00a0fdfe", textColor: "#000" },
   { slug: "next", name: "Next", color: "#00ff5fff", textColor: "#000" },
+  { slug: "carrefour", name: "Carrefour", color: "#ffffffff", textColor: "#fff" },
+  {
+    slug: "generic",
+    name: "Generic",
+    translationKey: "genericBank",
+    color: "#e2e8f0ff",
+    textColor: "#475569",
+  },
 ];
 
 // ─── Generic item icons ───────────────────────────────────────────────────────

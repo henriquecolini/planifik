@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Modal, Select } from "@/components/ui/index";
+import { Button, Modal, Select } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { CreateItemRequest, Folder, Item, ItemType, UpdateItemRequest } from "@/types";
 import { BANKS, ITEM_ICONS } from "@/types";
@@ -44,7 +44,7 @@ function AddItemModal({
   // Amount is stored in reais as a number. For checking accounts this can be negative.
   const [amountReais, setAmountReais] = useState(0);
   const [icon, setIcon] = useState("💡");
-  const [bank, setBank] = useState("");
+  const [bank, setBank] = useState("generic");
   const [folderId, setFolderId] = useState("");
   const [recurrence, setRecurrence] = useState<RecurrenceMode>("once");
   const [repeatCount, setRepeatCount] = useState("3");
@@ -110,7 +110,7 @@ function AddItemModal({
       setType("");
       setAmountReais(0);
       setIcon("💡");
-      setBank("");
+      setBank("generic");
       setFolderId("");
       setRecurrence("once");
       setRepeatCount("3");
@@ -422,7 +422,7 @@ function AddItemModal({
                             )}
                           >
                             <BankIcon bank={b.slug} size="sm" className="w-5 h-5 rounded" />
-                            {b.name}
+                            {b.translationKey ? t(b.translationKey as any) : b.name}
                           </button>
                         ))}
                       </div>

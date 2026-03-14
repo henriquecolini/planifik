@@ -30,6 +30,8 @@ const BANK_ABBREVIATIONS: Record<string, string> = {
   pan: "Pan",
   neon: "Neon",
   next: "Next",
+  carrefour: "Carr",
+  generic: "Gen",
 };
 
 const BANK_SIZE_CLASSES = {

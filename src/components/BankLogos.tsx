@@ -71,6 +71,14 @@ export const NextLogo = (props: LogoProps) => (
   <Image {...props} src="/icons/banks/next.svg" alt="Next"></Image>
 );
 
+export const CarrefourLogo = (props: LogoProps) => (
+  <Image {...props} src="/icons/banks/carrefour.svg" alt="Carrefour"></Image>
+);
+
+export const GenericLogo = (props: LogoProps) => (
+  <Image {...props} src="/icons/banks/generic.svg" alt="Generic"></Image>
+);
+
 export function getBankLogo(slug: string, props: LogoProps) {
   props = { width: 32, height: 32, ...props };
   switch (slug) {
@@ -106,6 +114,10 @@ export function getBankLogo(slug: string, props: LogoProps) {
       return <NeonLogo {...props} />;
     case "next":
       return <NextLogo {...props} />;
+    case "carrefour":
+      return <CarrefourLogo {...props} />;
+    case "generic":
+      return <GenericLogo {...props} />;
     default:
       return null;
   }

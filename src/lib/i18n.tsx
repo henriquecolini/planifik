@@ -206,6 +206,7 @@ const translations = {
 
   // ── Language picker ───────────────────────────────────────────────────────
   language: { en: "Language", "pt-BR": "Idioma" },
+  genericBank: { en: "Other", "pt-BR": "Outro" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type TranslationKey = keyof typeof translations;
