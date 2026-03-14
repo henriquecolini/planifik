@@ -291,7 +291,7 @@ export function ItemCard({
             saving && "opacity-50",
           )}
         >
-          {strBalance !== null && <ColoredCurrency value={numBalance} />}
+          {strBalance !== null && <ColoredCurrency value={numBalance} underline />}
         </button>
       )}
 

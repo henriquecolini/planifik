@@ -1,6 +1,14 @@
 import { cn, formatCurrency } from "@/lib/utils";
 
-export function ColoredCurrency({ value, readonly }: { value: number; readonly?: boolean }) {
+export function ColoredCurrency({
+  value,
+  readonly,
+  underline,
+}: {
+  value: number;
+  readonly?: boolean;
+  underline?: boolean;
+}) {
   return (
     <span
       className={cn(
@@ -12,6 +20,7 @@ export function ColoredCurrency({ value, readonly }: { value: number; readonly?:
             : value < 0
               ? "text-bill"
               : "text-text-primary",
+        underline && "border-b border-text-primary border-dotted",
       )}
     >
       {value > 0 && "+"}
