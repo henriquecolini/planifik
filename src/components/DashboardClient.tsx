@@ -101,6 +101,10 @@ export function DashboardClient() {
         setFolders(newFolders);
         setItems(newItems);
         setMonthTotal(data.monthTotal);
+
+        if (!silent) {
+          setCollapsedFolderIds(new Set(newFolderKeys));
+        }
       } finally {
         if (!silent) setLoading(false);
       }
@@ -438,8 +442,11 @@ export function DashboardClient() {
         }}
         groupId={selectedGroup?.id ?? ""}
         editFolder={folderToEdit}
-        onCreated={(_) => fetchItems()}
-        onUpdated={(_) => fetchItems()}
+        onCreated={(folder) => {
+          setCollapsedFolderIds((prev) => new Set(prev).add(folder.id));
+          fetchItems(true);
+        }}
+        onUpdated={() => fetchItems(true)}
       />
       <GroupModal
         open={groupModal !== null}
