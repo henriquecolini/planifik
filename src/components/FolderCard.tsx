@@ -1,6 +1,6 @@
 "use client";
 
-import { MdEditSquare, MdExpandMore, MdMoreVert, MdDelete } from "react-icons/md";
+import { MdEditSquare, MdExpandMore, MdMoreVert, MdDelete, MdFolder } from "react-icons/md";
 import { cn } from "@/lib/utils";
 import type { Folder, Item } from "@/types";
 import { useSortable } from "@dnd-kit/react/sortable";
@@ -81,10 +81,7 @@ export function FolderCard({
         {/* Name */}
         <div className="flex-1 flex items-center gap-1.5 min-w-0">
           {folder.backgroundColor.split(",")[1] && (
-            <div
-              className="w-8 h-3 rounded-full flex-shrink-0"
-              style={{ backgroundColor: folder.backgroundColor.split(",")[1] }}
-            />
+            <MdFolder size={20} style={{ color: folder.backgroundColor.split(",")[1] }} />
           )}
           <span className="text-sm font-semibold text-text-primary truncate">{folder.name}</span>
         </div>

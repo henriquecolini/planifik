@@ -3,8 +3,8 @@
 // Full-screen modal for creating OR editing a folder.
 // Replaces the previous inline popup.
 
-import { useEffect, useRef, useState } from "react";
-import { MdExpandMore, MdDragIndicator } from "react-icons/md";
+import React, { useEffect, useRef, useState } from "react";
+import { MdExpandMore, MdDragIndicator, MdFolder } from "react-icons/md";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { Button, Modal, Input } from "@/components/ui";
@@ -29,12 +29,12 @@ const FOLDER_ICONS = [
   "📱",
 ];
 const FOLDER_COLORS = [
-  { preview: "#ffffff", color: "#ffffff" },
-  { preview: "#ef4444", color: "#FEF2F2,#ef4444" },
-  { preview: "#10b981", color: "#ECFDF5,#10b981" },
-  { preview: "#3b82f6", color: "#EFF6FF,#3b82f6" },
-  { preview: "#f97316", color: "#FFF7ED,#f97316" },
-  { preview: "#8b5cf6", color: "#F5F3FF,#8b5cf6" },
+  { preview: "#ffffff", color: "#ffffff,#888888" },
+  { preview: "#ef4444", color: "#fef2f2,#ef4444" },
+  { preview: "#10b981", color: "#ecfdf5,#10b981" },
+  { preview: "#3b82f6", color: "#eff6ff,#3b82f6" },
+  { preview: "#f97316", color: "#fff7ed,#f97316" },
+  { preview: "#8b5cf6", color: "#f5f3ff,#8b5cf6" },
 ];
 
 interface FolderPopupProps {
@@ -189,12 +189,7 @@ export function FolderModal({
           </div>
 
           <div className="flex-1 flex items-center gap-1.5 min-w-0">
-            {color.split(",")[1] && (
-              <div
-                className="w-8 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: color.split(",")[1] }}
-              />
-            )}
+            {color.split(",")[1] && <MdFolder size={20} style={{ color: color.split(",")[1] }} />}
             <span className="text-sm font-semibold text-text-primary truncate">
               {name || t("folderName")}
             </span>
