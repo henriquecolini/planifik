@@ -203,6 +203,21 @@ const translations = {
   inviteByEmail: { en: "Invite by Email", "pt-BR": "Convidar por Email" },
   invite: { en: "Invite", "pt-BR": "Convidar" },
   inviteEmailPlaceholder: { en: "friend@example.com", "pt-BR": "amigo@exemplo.com" },
+  deleteGroup: { en: "Delete Group", "pt-BR": "Excluir Grupo" },
+  deleteGroupConfirm: {
+    en: 'Are you sure you want to delete the group "{name}"?',
+    "pt-BR": 'Tem certeza que deseja excluir o grupo "{name}"?',
+  },
+  deleteGroupWarning: {
+    en: "This will delete all of its folders and items. This cannot be undone.",
+    "pt-BR": "Isso excluirá todas as suas pastas e itens. Esta ação não pode ser desfeita.",
+  },
+  noGroupsTitle: { en: "Welcome!", "pt-BR": "Bem-vindo!" },
+  noGroupsDesc: {
+    en: "You don't belong to any group yet. Create your first group to start managing your finances.",
+    "pt-BR":
+      "Você ainda não pertence a nenhum grupo. Crie seu primeiro grupo para começar a gerenciar suas finanças.",
+  },
 
   // ── Language picker ───────────────────────────────────────────────────────
   language: { en: "Language", "pt-BR": "Idioma" },

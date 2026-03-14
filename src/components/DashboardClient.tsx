@@ -5,6 +5,7 @@ import { MdAdd, MdCreateNewFolder, MdRefresh } from "react-icons/md";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+import { Button, Modal } from "./ui/index";
 import { TopBar } from "./TopBar";
 import { MonthSelector } from "./MonthSelector";
 import { BalanceCounter } from "./BalanceCounter";
@@ -13,6 +14,7 @@ import { PayItemModal } from "./modals/PayItemModal";
 import { UnpayModal } from "./modals/UnpayModal";
 import { DeleteConfirmModal } from "./modals/DeleteConfirmModal";
 import { DeleteFolderConfirmModal } from "./modals/DeleteFolderConfirmModal";
+import { DeleteGroupConfirmModal } from "./modals/DeleteGroupConfirmModal";
 import { FolderModal } from "./modals/FolderModal";
 import { GroupModal } from "./modals/GroupModal";
 
@@ -54,6 +56,7 @@ export function DashboardClient() {
   const [itemToUnpay, setItemToUnpay] = useState<Item | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
+  const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
@@ -179,6 +182,22 @@ export function DashboardClient() {
     [itemToUnpay, monthString, fetchItems],
   );
 
+  const handleDeleteGroupConfirm = useCallback(async () => {
+    if (!groupToDelete) return;
+    try {
+      await fetch(`/api/groups/${groupToDelete.id}`, { method: "DELETE" });
+      const remainingGroups = groups.filter((g) => g.id !== groupToDelete.id);
+      setGroups(remainingGroups);
+      if (selectedGroup?.id === groupToDelete.id) {
+        setSelectedGroup(remainingGroups[0] || null);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setGroupToDelete(null);
+    }
+  }, [groupToDelete, groups, selectedGroup]);
+
   const handleDeleteConfirm = useCallback(
     async (mode: DeleteMode) => {
       if (!itemToDelete) return;
@@ -247,6 +266,41 @@ export function DashboardClient() {
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
+
+  if (groups.length === 0 && !loading) {
+    return (
+      <div className="min-h-screen bg-base flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-24 h-24 bg-accent/10 rounded-full flex items-center justify-center mb-6">
+          <div className="text-5xl">👋</div>
+        </div>
+        <h1 className="text-2xl font-bold mb-2">{t("noGroupsTitle")}</h1>
+        <p className="text-text-secondary mb-8 max-w-xs">{t("noGroupsDesc")}</p>
+        <Button onClick={() => setGroupModal("create")} size="lg">
+          <MdAdd size={20} className="mr-2" />
+          {t("newGroupTitle")}
+        </Button>
+
+        <GroupModal
+          open={groupModal !== null}
+          onClose={() => setGroupModal(null)}
+          mode={groupModal ?? "create"}
+          activeGroup={selectedGroup}
+          onCreated={(g) => {
+            setGroups((prev) => [...prev, g]);
+            setSelectedGroup(g);
+          }}
+          onGroupUpdated={(g) => {
+            setGroups((prev) => prev.map((x) => (x.id === g.id ? g : x)));
+            setSelectedGroup(g);
+          }}
+          onDeleteGroup={(g) => {
+            setGroupModal(null);
+            setGroupToDelete(g);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-base">
@@ -461,6 +515,16 @@ export function DashboardClient() {
           setGroups((prev) => prev.map((x) => (x.id === g.id ? g : x)));
           setSelectedGroup(g);
         }}
+        onDeleteGroup={(g) => {
+          setGroupModal(null);
+          setGroupToDelete(g);
+        }}
+      />
+      <DeleteGroupConfirmModal
+        open={!!groupToDelete}
+        onClose={() => setGroupToDelete(null)}
+        group={groupToDelete}
+        onConfirm={handleDeleteGroupConfirm}
       />
     </div>
   );

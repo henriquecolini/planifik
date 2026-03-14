@@ -48,6 +48,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const group = await prisma.group.update({
     where: { id: params.id },
     data: { name: name.trim() },
+    include: {
+      members: {
+        include: { user: { select: { id: true, name: true, email: true, image: true } } },
+      },
+    },
   });
 
   return NextResponse.json(group);

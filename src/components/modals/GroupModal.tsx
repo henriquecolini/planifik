@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MdPersonRemove } from "react-icons/md";
 import { Button, Input, Modal } from "@/components/ui/index";
 import Image from "next/image";
@@ -15,6 +15,7 @@ interface GroupModalProps {
   activeGroup?: Group | null;
   onCreated: (group: Group) => void;
   onGroupUpdated: (group: Group) => void;
+  onDeleteGroup: (group: Group) => void;
 }
 
 export function GroupModal({
@@ -24,15 +25,23 @@ export function GroupModal({
   activeGroup,
   onCreated,
   onGroupUpdated,
+  onDeleteGroup,
 }: GroupModalProps) {
   const { data: session } = useSession();
   const { t } = useI18n();
   const userId = session?.user?.id;
   const [name, setName] = useState("");
+  const [editName, setEditName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const isOwner = activeGroup?.members?.find((m) => m.userId === userId)?.role === "owner";
+
+  useEffect(() => {
+    if (activeGroup) setEditName(activeGroup.name);
+  }, [activeGroup]);
 
   const handleCreate = async () => {
     setError("");
@@ -49,6 +58,27 @@ export function GroupModal({
       onCreated(group);
       setName("");
       onClose();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateName = async () => {
+    if (!activeGroup || !editName.trim() || editName === activeGroup.name) return;
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/groups/${activeGroup.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      const updated = await res.json();
+      onGroupUpdated(updated);
+      setSuccess(t("done"));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
@@ -131,13 +161,28 @@ export function GroupModal({
       title={`${t("manageGroupTitle")}: ${activeGroup?.name}`}
       size="md"
       footer={
-        <Button variant="secondary" onClick={onClose}>
-          {t("done")}
-        </Button>
+        <div className="flex justify-between items-center w-full">
+          {isOwner ? (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                if (activeGroup) onDeleteGroup(activeGroup);
+              }}
+            >
+              {t("deleteGroup")}
+            </Button>
+          ) : (
+            <div />
+          )}
+          <Button variant="secondary" onClick={onClose}>
+            {t("done")}
+          </Button>
+        </div>
       }
     >
       {error && (
-        <div className="text-sm text-bill   bg-bill-bg   border border-bill-border   rounded-lg px-3 py-2">
+        <div className="text-sm text-bill bg-bill-bg border border-bill-border rounded-lg px-3 py-2">
           {error}
         </div>
       )}
@@ -147,7 +192,23 @@ export function GroupModal({
         </div>
       )}
 
-      <div>
+      {isOwner && (
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Input
+              label={t("groupNameField")}
+              placeholder={t("groupNamePlaceholder")}
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleUpdateName} disabled={loading || editName === activeGroup?.name}>
+            {t("save")}
+          </Button>
+        </div>
+      )}
+
+      <div className="mt-4">
         <p className="text-xs font-medium text-text-secondary mb-2">{t("members")}</p>
         <div className="space-y-1.5">
           {activeGroup?.members?.map((m) => (
