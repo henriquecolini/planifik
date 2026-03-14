@@ -295,71 +295,67 @@ export function ItemCard({
         </button>
       )}
 
-      {/* Pay button */}
-      {(!isCheckingAccount || isPaid) && numBalance != 0 && !editing && (
-        <button
-          onClick={() => (isPaid ? onUnpay(item) : onPay(item))}
-          className={cn(
-            "flex-shrink-0 h-7 px-2.5 rounded-lg text-xs font-medium transition-all duration-100 active:scale-95 border",
-            isPaid
-              ? "bg-white border-border-default text-text-muted hover:bg-elevated flex items-center gap-1"
-              : isIncome
-                ? "bg-income-bg text-income border-income-border hover:bg-green-100"
-                : "bg-bill-bg text-bill border-bill-border hover:bg-red-100",
-          )}
-        >
-          {isPaid && <MdCheck size={11} />}
-          {isPaid ? (isIncome ? t("received") : t("paid")) : isIncome ? t("receive") : t("pay")}
-        </button>
-      )}
-
       {/* Menu */}
-      <div className="relative">
+      <div className="relative flex items-center">
         <button
           onClick={(e) => {
             e.stopPropagation();
             setMenuOpen((v) => !v);
           }}
-          className="w-6 h-6 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-elevated transition-colors"
         >
-          <MdMoreVert size={16} />
+          <MdMoreVert size={18} />
         </button>
 
         {menuOpen && (
           <>
             <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
 
-            <div className="absolute right-0 top-8 w-40 bg-white border border-border-default rounded-xl shadow-lg overflow-hidden z-40">
+            <div className="absolute right-0 top-10 w-48 bg-white border border-border-default rounded-xl shadow-lg overflow-hidden z-40">
+              {(!isCheckingAccount || isPaid) && numBalance != 0 && !editing && (
+                <button
+                  onClick={() => {
+                    isPaid ? onUnpay(item) : onPay(item);
+                    setMenuOpen(false);
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors",
+                    isPaid
+                      ? "hover:bg-elevated"
+                      : isIncome
+                        ? "text-income hover:bg-income-bg"
+                        : "text-bill hover:bg-bill-bg",
+                  )}
+                >
+                  {isPaid ? <MdRotateLeft size={14} /> : <MdCheck size={14} />}
+                  {isPaid
+                    ? isIncome
+                      ? t("markUnpaid")
+                      : t("markUnpaid")
+                    : isIncome
+                      ? t("receive")
+                      : t("pay")}
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   onEdit(item);
                   setMenuOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-elevated"
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-elevated border-t border-border-subtle"
               >
-                <MdEditSquare size={13} /> {t("edit")}
+                <MdEditSquare size={14} /> {t("edit")}
               </button>
-
-              {isPaid && (
-                <button
-                  onClick={() => {
-                    onUnpay(item);
-                    setMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-elevated"
-                >
-                  <MdRotateLeft size={13} /> {t("markUnpaid")}
-                </button>
-              )}
 
               <button
                 onClick={() => {
                   onDelete(item);
                   setMenuOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-bill hover:bg-bill-bg"
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-bill hover:bg-bill-bg border-t border-border-subtle"
               >
-                <MdDelete size={13} /> {t("delete")}
+                <MdDelete size={14} /> {t("delete")}
               </button>
             </div>
           </>
