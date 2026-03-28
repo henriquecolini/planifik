@@ -104,10 +104,6 @@ export function DashboardClient() {
         setFolders(newFolders);
         setItems(newItems);
         setMonthTotal(data.monthTotal);
-
-        if (!silent) {
-          setCollapsedFolderIds(new Set(newFolderKeys));
-        }
       } finally {
         if (!silent) setLoading(false);
       }
@@ -379,6 +375,7 @@ export function DashboardClient() {
                     itemIds,
                   }),
                 });
+                fetchItems(true);
               }
             }}
           >
