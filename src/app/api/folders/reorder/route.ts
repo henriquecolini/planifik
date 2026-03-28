@@ -5,17 +5,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ReorderFoldersSchema } from "@/lib/validations";
+import { z } from "zod";
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = session?.user?.id;
-  const { folderIds } = await req.json();
+  const json = await req.json();
+  const result = ReorderFoldersSchema.safeParse(json);
 
-  if (!Array.isArray(folderIds) || folderIds.length === 0) {
-    return NextResponse.json({ error: "folderIds must be a non-empty array" }, { status: 400 });
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
   }
+
+  const { folderIds } = result.data;
 
   // 1. Get first folder to check group and permissions
   const firstFolder = await prisma.folder.findUnique({

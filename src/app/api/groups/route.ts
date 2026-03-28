@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { CreateGroupSchema } from "@/lib/validations";
+import { z } from "zod";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -35,11 +37,14 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = session?.user?.id;
-  const { name } = await req.json();
+  const json = await req.json();
+  const result = CreateGroupSchema.safeParse(json);
 
-  if (!name?.trim()) {
-    return NextResponse.json({ error: "Group name is required" }, { status: 400 });
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
   }
+
+  const { name } = result.data;
 
   const group = await prisma.group.create({
     data: {

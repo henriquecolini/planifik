@@ -54,8 +54,8 @@ export function ItemCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [strBalance, setStrBalance] = useState<string | undefined>(undefined);
-  const [numBalance, setNumBalance] = useState<number>(item.balance);
+  const [strAmount, setStrAmount] = useState<string | undefined>(undefined);
+  const [numAmount, setNumAmount] = useState<number>(item.practicalAmount);
 
   const currencyRef = useRef<HTMLInputElement>(null);
 
@@ -69,18 +69,18 @@ export function ItemCard({
 
   const forcePositive = isIncome;
   const forceNegative = isBill || isCreditCard;
-  const visualPositive = (forcePositive && numBalance != 0) || numBalance > 0;
-  const visualNegative = (forceNegative && numBalance != 0) || numBalance < 0;
+  const visualPositive = (forcePositive && numAmount != 0) || numAmount > 0;
+  const visualNegative = (forceNegative && numAmount != 0) || numAmount < 0;
 
   /* ───────────────────────────────
      Sync local state when item changes
   ─────────────────────────────── */
 
   useEffect(() => {
-    setStrBalance(undefined);
-    setNumBalance(item.balance);
+    setStrAmount(undefined);
+    setNumAmount(item.practicalAmount);
     setEditing(false);
-  }, [item.id, item.balance]);
+  }, [item.id, item.practicalAmount]);
 
   /* ───────────────────────────────
      Focus input when editing starts
@@ -128,11 +128,11 @@ export function ItemCard({
     _name?: string,
     values?: CurrencyInputOnChangeValues,
   ) => {
-    setStrBalance(_value);
+    setStrAmount(_value);
     if (values?.float != null) {
-      setNumBalance(ensureSign(values.float));
+      setNumAmount(ensureSign(values.float));
     } else {
-      setNumBalance(0);
+      setNumAmount(0);
     }
   };
 
@@ -151,9 +151,9 @@ export function ItemCard({
   ─────────────────────────────── */
 
   const commitEdit = async () => {
-    const newBalance = ensureSign(numBalance);
+    const newBalance = ensureSign(numAmount);
     setEditing(false);
-    if (newBalance === item.balance) return;
+    if (newBalance === item.practicalAmount) return;
     setSaving(true);
 
     try {
@@ -176,8 +176,8 @@ export function ItemCard({
   };
 
   const cancelEdit = () => {
-    setStrBalance(undefined);
-    setNumBalance(item.balance);
+    setStrAmount(undefined);
+    setNumAmount(item.practicalAmount);
     setEditing(false);
   };
 
@@ -249,8 +249,8 @@ export function ItemCard({
         <div className="flex items-center border border-accent rounded-md overflow-hidden bg-white focus-within:ring-1 focus-within:ring-accent/30">
           <CurrencyInput
             ref={currencyRef}
-            defaultValue={numBalance}
-            value={strBalance}
+            defaultValue={numAmount}
+            value={strAmount}
             onValueChange={handleOnValueChange}
             allowNegativeValue={!forcePositive}
             decimalSeparator=","
@@ -269,7 +269,7 @@ export function ItemCard({
           />
         </div>
       ) : isPaid ? (
-        <ColoredCurrency value={numBalance} readonly />
+        <ColoredCurrency value={numAmount} readonly />
       ) : (
         <button
           onClick={() => {
@@ -291,7 +291,7 @@ export function ItemCard({
             saving && "opacity-50",
           )}
         >
-          {strBalance !== null && <ColoredCurrency value={numBalance} underline />}
+          {strAmount !== null && <ColoredCurrency value={numAmount} underline />}
         </button>
       )}
 
@@ -312,7 +312,7 @@ export function ItemCard({
             <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
 
             <div className="absolute right-0 top-10 w-48 bg-white border border-border-default rounded-xl shadow-lg overflow-hidden z-40">
-              {(!isCheckingAccount || isPaid) && numBalance != 0 && !editing && (
+              {(!isCheckingAccount || isPaid) && numAmount != 0 && !editing && (
                 <button
                   onClick={() => {
                     isPaid ? onUnpay(item) : onPay(item);

@@ -2,13 +2,25 @@
 // Shared TypeScript Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ItemType = "BILL" | "INCOME" | "CREDIT_CARD" | "CHECKING_ACCOUNT";
+import { z } from "zod";
+import {
+  ItemTypeSchema,
+  RecurrenceModeSchema,
+  DeleteModeSchema,
+  PaymentMethodSchema,
+  CreateGroupSchema,
+  CreateFolderSchema,
+  UpdateFolderSchema,
+  CreateItemSchema,
+  UpdateItemSchema,
+  PayItemRequestSchema,
+  DeleteItemRequestSchema,
+} from "@/lib/validations";
 
-export type RecurrenceMode = "once" | "limited" | "forever";
-
-export type DeleteMode = "this" | "following" | "all";
-
-export type PaymentMethod = "credit_card" | "checking_account" | "cash";
+export type ItemType = z.infer<typeof ItemTypeSchema>;
+export type RecurrenceMode = z.infer<typeof RecurrenceModeSchema>;
+export type DeleteMode = z.infer<typeof DeleteModeSchema>;
+export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
 
 import { DefaultSession } from "next-auth";
 
@@ -75,8 +87,8 @@ export interface Item {
   user?: User;
   // Fields computed by the API for the queried month:
   isPaid?: boolean;
-  monthBalance?: number | null; // Specific balance for this month, if any
-  balance: number; // Final balance (monthBalance ?? defaultAmount ?? 0)
+  monthAmount?: number | null; // Specific balance for this month, if any
+  practicalAmount: number; // Final balance (amount ?? defaultAmount ?? 0)
   event?: ItemEvent | null;
   folder?: Folder | null;
 }
@@ -114,68 +126,25 @@ export interface ItemsApiResponse {
   monthTotal: number;
 }
 
+export interface ErrorResponse {
+  error: string;
+}
+
 // ─── API Request Types ─────────────────────────────────────────────────────────
 
-export interface CreateGroupRequest {
-  name: string;
-}
+export type CreateGroupRequest = z.infer<typeof CreateGroupSchema>;
 
-export interface CreateFolderRequest {
-  groupId: string;
-  name: string;
-  icon: string;
-  backgroundColor: string;
-}
+export type CreateFolderRequest = z.infer<typeof CreateFolderSchema>;
 
-export interface UpdateFolderRequest {
-  name?: string;
-  icon?: string;
-  backgroundColor?: string;
-}
+export type UpdateFolderRequest = z.infer<typeof UpdateFolderSchema>;
 
-export interface CreateItemRequest {
-  groupId: string;
-  folderId?: string | null;
-  title: string;
-  type: ItemType;
-  icon: string;
-  bank?: string | null;
-  month?: string;
-  startMonth: string;
-  endMonth?: string | null;
-  dueDay?: number | null;
-  dueNextMonth?: boolean;
-  dueDate?: string | null;
-  amount: number | null;
-  defaultAmount?: number | null;
-}
+export type CreateItemRequest = z.infer<typeof CreateItemSchema>;
 
-export interface UpdateItemRequest {
-  folderId?: string | null;
-  title?: string;
-  icon?: string;
-  bank?: string | null;
-  month?: string;
-  startMonth?: string;
-  endMonth?: string | null;
-  dueDay?: number | null;
-  dueNextMonth?: boolean;
-  dueDate?: string | null;
-  amount: number | null;
-  defaultAmount?: number | null;
-}
+export type UpdateItemRequest = z.infer<typeof UpdateItemSchema>;
 
-export interface PayItemRequest {
-  month: string;
-  paymentMethod?: PaymentMethod;
-  paymentItemId?: string;
-  rollback?: boolean;
-}
+export type PayItemRequest = z.infer<typeof PayItemRequestSchema>;
 
-export interface DeleteItemRequest {
-  mode: DeleteMode;
-  month?: string;
-}
+export type DeleteItemRequest = z.infer<typeof DeleteItemRequestSchema>;
 
 // ─── UI State Types ────────────────────────────────────────────────────────────
 

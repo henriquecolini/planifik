@@ -37,7 +37,7 @@ export const authOptions: NextAuthOptions = {
     async createUser({ user }) {
       await prisma.group.create({
         data: {
-          name: "Personal",
+          name: user.name ?? "Personal",
           members: {
             create: {
               userId: user.id,

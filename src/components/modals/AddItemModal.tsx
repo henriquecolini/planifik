@@ -41,7 +41,6 @@ function AddItemModal({
   // ── Form state ─────────────────────────────────────────────────────────────
   const [title, setTitle] = useState("");
   const [type, setType] = useState<ItemType | "">("");
-  const [amount, setAmount] = useState(null as number | null);
   const [icon, setIcon] = useState("💡");
   const [bank, setBank] = useState("generic");
   const [folderId, setFolderId] = useState("");
@@ -49,6 +48,7 @@ function AddItemModal({
   const [repeatCount, setRepeatCount] = useState("3");
   const [dueDay, setDueDay] = useState("");
   const [dueDayNextMonth, setDueDayNextMonth] = useState(false);
+  const [monthAmount, setMonthAmount] = useState(null as number | null);
   const [defaultAmount, setDefaultAmount] = useState(0);
 
   // Tracks if the user has manually picked an icon or bank
@@ -81,7 +81,7 @@ function AddItemModal({
     if (editItem) {
       setTitle(editItem.title);
       setType(editItem.type);
-      setAmount(editItem.monthBalance ?? null);
+      setMonthAmount(editItem.monthAmount ?? null);
       setDefaultAmount(editItem.defaultAmount ?? 0);
       setIcon(editItem.icon);
       setBank(editItem.bank ?? "");
@@ -103,7 +103,7 @@ function AddItemModal({
     } else {
       setTitle("");
       setType("");
-      setAmount(null);
+      setMonthAmount(null);
       setIcon("💡");
       setBank("generic");
       setFolderId("");
@@ -212,11 +212,9 @@ function AddItemModal({
         endMonth: computedEndMonth,
         dueDay: dueDay ? parseInt(dueDay, 10) : null,
         dueNextMonth: dueDayNextMonth,
-        amount: amount,
+        amount: monthAmount,
         defaultAmount: defaultAmount,
       };
-
-      console.log(body);
 
       const url = isEditing ? `/api/items/${editItem!.id}` : "/api/items";
       const method = isEditing ? "PATCH" : "POST";
@@ -415,16 +413,16 @@ function AddItemModal({
               <div className="space-y-3 bg-base p-3 rounded-lg border border-border-default">
                 <div className="space-y-1">
                   <label className="block text-xs font-medium text-text-secondary">
-                    {t("monthBalance")}
+                    {t("monthAmount")}
                   </label>
                   <div className="flex gap-2">
                     <div className="flex-1 flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
                       <CurrencyInput
                         key={`month-${amountKey}`}
-                        value={amount === null ? defaultAmount : undefined}
-                        defaultValue={amount === null ? defaultAmount : amount}
+                        value={monthAmount === null ? defaultAmount : undefined}
+                        defaultValue={monthAmount === null ? defaultAmount : monthAmount}
                         onValueChange={(v, _, values) =>
-                          setAmount(values?.float != null ? ensureSign(values.float) : 0)
+                          setMonthAmount(values?.float != null ? ensureSign(values.float) : 0)
                         }
                         onFocus={(e) => e.target.select()}
                         allowNegativeValue={!forcePositive}
@@ -435,12 +433,12 @@ function AddItemModal({
                         className="flex-1 text-sm text-text-primary px-3 py-2 text-left bg-transparent outline-none"
                       />
                     </div>
-                    {amount != null && (
+                    {monthAmount != null && (
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => {
-                          setAmount(null);
+                          setMonthAmount(null);
                           setAmountKey((k) => k + 1);
                         }}
                         className="text-[11px] h-9"
@@ -488,12 +486,12 @@ function AddItemModal({
                 <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
                   <CurrencyInput
                     key={amountKey}
-                    defaultValue={amount !== null ? amount : defaultAmount}
+                    defaultValue={monthAmount !== null ? monthAmount : defaultAmount}
                     onValueChange={(v, _, values) => {
                       let value = values?.float != null ? ensureSign(values.float) : 0;
                       setDefaultAmount(value);
-                      if (amount !== null) {
-                        setAmount(value);
+                      if (monthAmount !== null) {
+                        setMonthAmount(value);
                       }
                     }}
                     onFocus={(e) => e.target.select()}

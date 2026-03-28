@@ -5,7 +5,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PayItemRequestSchema } from "@/lib/validations";
 import type { PayItemRequest } from "@/types";
+import { z } from "zod";
 
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -26,8 +28,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body: PayItemRequest = await req.json();
-  if (!body.month) return NextResponse.json({ error: "month is required" }, { status: 400 });
+  const json = await req.json();
+  const result = PayItemRequestSchema.safeParse(json);
+
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
+  }
+
+  const body: PayItemRequest = result.data;
 
   const userId = session?.user?.id;
   const item = await authorize(params.id, userId, body.month);

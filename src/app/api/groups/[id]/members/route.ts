@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { AddGroupMemberSchema, RemoveGroupMemberSchema } from "@/lib/validations";
+import { z } from "zod";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -20,7 +22,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { email } = await req.json();
+  const json = await req.json();
+  const result = AddGroupMemberSchema.safeParse(json);
+
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
+  }
+
+  const { email } = result.data;
   const invitee = await prisma.user.findUnique({ where: { email } });
   if (!invitee) {
     return NextResponse.json({ error: "User with that email not found" }, { status: 404 });
@@ -47,7 +56,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const requesterId = session?.user?.id;
-  const { userId: targetUserId } = await req.json();
+  const json = await req.json();
+  const result = RemoveGroupMemberSchema.safeParse(json);
+
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
+  }
+
+  const { userId: targetUserId } = result.data;
 
   const requesterMembership = await prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId: params.id, userId: requesterId } },

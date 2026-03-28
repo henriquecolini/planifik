@@ -7,7 +7,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { addMonths, fromMonthString, toMonthString } from "@/lib/utils";
-import type { DeleteMode, UpdateItemRequest } from "@/types";
+import { UpdateItemSchema } from "@/lib/validations";
+import type { DeleteMode, ErrorResponse, Item, UpdateItemRequest } from "@/types";
+import { z } from "zod";
 
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -34,7 +36,10 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   return NextResponse.json(item);
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } },
+): Promise<NextResponse<ErrorResponse | Item>> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -42,7 +47,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const existing = await authorize(params.id, userId);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const body: UpdateItemRequest = await req.json();
+  const json = await req.json();
+  const result = UpdateItemSchema.safeParse(json);
+
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
+  }
+
+  const body: UpdateItemRequest = result.data;
 
   if (body.month) {
     if (typeof body.amount !== "number") {
@@ -92,11 +104,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const response = {
     ...updated,
     defaultAmount: updated.defaultAmount ? new Decimal(updated.defaultAmount).toNumber() : null,
-    monthBalance:
+    monthAmount:
       updated.balances?.[0]?.amount != null
         ? new Decimal(updated.balances[0].amount).toNumber()
         : null,
-    balance: new Decimal(updated.balances?.[0]?.amount ?? updated.defaultAmount ?? 0).toNumber(),
+    practicalAmount: new Decimal(
+      updated.balances?.[0]?.amount ?? updated.defaultAmount ?? 0,
+    ).toNumber(),
+    dueDate: updated.dueDate?.toJSON() ?? null,
+    createdAt: updated.createdAt?.toJSON() ?? null,
+    updatedAt: updated.updatedAt?.toJSON() ?? null,
   };
   delete (response as any).balances;
 

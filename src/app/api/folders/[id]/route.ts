@@ -5,7 +5,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { UpdateFolderSchema } from "@/lib/validations";
 import type { UpdateFolderRequest } from "@/types";
+import { z } from "zod";
 
 async function authorize(folderId: string, userId: string) {
   const folder = await prisma.folder.findUnique({
@@ -26,7 +28,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const folder = await authorize(params.id, userId);
   if (!folder) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const body: UpdateFolderRequest = await req.json();
+  const json = await req.json();
+  const result = UpdateFolderSchema.safeParse(json);
+
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
+  }
+
+  const body: UpdateFolderRequest = result.data;
 
   const updated = await prisma.folder.update({
     where: { id: params.id },

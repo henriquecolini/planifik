@@ -4,31 +4,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { CreateItemRequest } from "@/types";
+import { CreateItemSchema } from "@/lib/validations";
+import type { CreateItemRequest, ErrorResponse, Item } from "@/types";
+import { z } from "zod";
 
 import { Decimal } from "@prisma/client/runtime/library";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse<ErrorResponse | Item>> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = session?.user?.id;
-  const body: CreateItemRequest = await req.json();
+  const json = await req.json();
+  const result = CreateItemSchema.safeParse(json);
+
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
+  }
+
+  const body: CreateItemRequest = result.data;
 
   // Verify the user belongs to the group
   const member = await prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId: body.groupId, userId } },
   });
   if (!member) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-  // Validate required fields
-  if (!body.title?.trim())
-    return NextResponse.json({ error: "Title is required" }, { status: 400 });
-  if (!body.type) return NextResponse.json({ error: "Type is required" }, { status: 400 });
-  if (body.amount === undefined)
-    return NextResponse.json({ error: "Amount is required" }, { status: 400 });
-  if (!body.startMonth)
-    return NextResponse.json({ error: "Start month is required" }, { status: 400 });
 
   const item = await prisma.item.create({
     data: {
@@ -68,9 +68,12 @@ export async function POST(req: NextRequest) {
   const response = {
     ...item,
     defaultAmount: item.defaultAmount ? new Decimal(item.defaultAmount).toNumber() : null,
-    monthBalance:
+    monthAmount:
       item.balances[0]?.amount != null ? new Decimal(item.balances[0].amount).toNumber() : null,
-    balance: new Decimal(item.balances[0]?.amount ?? item.defaultAmount ?? 0).toNumber(),
+    practicalAmount: new Decimal(item.balances[0]?.amount ?? item.defaultAmount ?? 0).toNumber(),
+    dueDate: item.dueDate?.toJSON() ?? null,
+    createdAt: item.createdAt?.toJSON() ?? null,
+    updatedAt: item.updatedAt?.toJSON() ?? null,
   };
   delete (response as any).balances;
 

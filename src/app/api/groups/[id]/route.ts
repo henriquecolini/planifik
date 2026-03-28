@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { CreateGroupSchema } from "@/lib/validations";
+import { z } from "zod";
 
 async function requireMembership(groupId: string, userId: string) {
   return prisma.groupMember.findUnique({
@@ -44,7 +46,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { name } = await req.json();
+  const json = await req.json();
+  const result = CreateGroupSchema.safeParse(json);
+
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
+  }
+
+  const { name } = result.data;
   const group = await prisma.group.update({
     where: { id: params.id },
     data: { name: name.trim() },

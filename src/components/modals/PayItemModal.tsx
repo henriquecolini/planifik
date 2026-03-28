@@ -33,7 +33,7 @@ export function PayItemModal({
 
   const isIncome = item.type === "INCOME";
   const isCard = item.type === "CREDIT_CARD";
-  const amount = item.balance;
+  const amount = item.practicalAmount;
 
   const checkingAccounts = accounts.filter((a) => a.type === "CHECKING_ACCOUNT");
   const creditCards = accounts.filter((a) => a.type === "CREDIT_CARD");
@@ -56,7 +56,7 @@ export function PayItemModal({
   const isAccountItem = (i: Item) => i.type === "CREDIT_CARD" || i.type === "CHECKING_ACCOUNT";
 
   const AccountOption = ({ acc }: { acc: Item }) => {
-    const balanceAmount = acc.balance;
+    const balanceAmount = acc.practicalAmount;
     const isSelected = selectedAccount?.id === acc.id;
     return (
       <button
@@ -78,8 +78,8 @@ export function PayItemModal({
           <div className="min-h-8 flex flex-col justify-center items-end">
             {isSelected ? (
               <>
-                <div className="line-through">{`${formatCurrency(selectedAccount.balance)}`}</div>
-                <div className="font-bold">{`${formatCurrency(selectedAccount.balance + amount)}`}</div>
+                <div className="line-through">{`${formatCurrency(selectedAccount.practicalAmount)}`}</div>
+                <div className="font-bold">{`${formatCurrency(selectedAccount.practicalAmount + amount)}`}</div>
               </>
             ) : (
               formatCurrency(balanceAmount)

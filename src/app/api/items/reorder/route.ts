@@ -5,17 +5,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ReorderItemsSchema } from "@/lib/validations";
+import { z } from "zod";
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = session?.user?.id;
-  const { itemId, folderId, itemIds } = await req.json();
+  const json = await req.json();
+  const result = ReorderItemsSchema.safeParse(json);
 
-  if (!itemId || !Array.isArray(itemIds)) {
-    return NextResponse.json({ error: "itemId and itemIds are required" }, { status: 400 });
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
   }
+
+  const { itemId, folderId, itemIds } = result.data;
 
   // 1. Authorize main item
   const item = await prisma.item.findUnique({

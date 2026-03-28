@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { BulkReorderSchema } from "@/lib/validations";
+import { z } from "zod";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -20,10 +22,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   if (!member) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const body = (await req.json()) as {
-    folders?: { id: string; position: number }[];
-    items?: { id: string; position: number; folderId: string | null }[];
-  };
+  const json = await req.json();
+  const result = BulkReorderSchema.safeParse(json);
+
+  if (!result.success) {
+    return NextResponse.json({ error: z.prettifyError(result.error) }, { status: 400 });
+  }
+
+  const body = result.data;
 
   await prisma.$transaction([
     ...(body.folders ?? []).map(({ id, position }) =>

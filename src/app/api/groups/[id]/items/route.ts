@@ -8,8 +8,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
+import { ErrorResponse, ItemsApiResponse } from "@/types";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } },
+): Promise<NextResponse<ErrorResponse | ItemsApiResponse>> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -81,16 +85,20 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
         return {
           ...item,
-          defaultAmount: item.defaultAmount,
           isPaid: events.length > 0,
           event: event
             ? {
                 ...event,
+                createdAt: event.createdAt?.toJSON() ?? null,
                 paymentAccountItem,
               }
             : null,
-          monthBalance: balances[0]?.amount,
-          balance: balances[0]?.amount ?? item.defaultAmount ?? new Decimal(0),
+          defaultAmount: Number(item.defaultAmount),
+          monthAmount: Number(balances[0]?.amount),
+          practicalAmount: Number(balances[0]?.amount ?? item.defaultAmount ?? new Decimal(0)),
+          dueDate: item.dueDate?.toJSON() ?? null,
+          createdAt: item.createdAt?.toJSON() ?? null,
+          updatedAt: item.updatedAt?.toJSON() ?? null,
         };
       }),
   );
@@ -104,14 +112,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     for (const item of folderItems) {
       if (!item.isPaid) {
-        totalAmount = totalAmount.plus(item.balance);
-        monthTotal = monthTotal.plus(item.balance);
+        totalAmount = totalAmount.plus(item.practicalAmount);
+        monthTotal = monthTotal.plus(item.practicalAmount);
       }
     }
 
     return {
       ...f,
-      items: folderItems.map((i) => ({ ...i, balance: i.balance.toNumber() })),
+      items: folderItems,
       totalAmount: totalAmount.toNumber(),
     };
   });
@@ -119,9 +127,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   for (const item of items) {
     if (!item.folderId) {
       if (!item.isPaid) {
-        monthTotal = monthTotal.plus(item.balance);
+        monthTotal = monthTotal.plus(item.practicalAmount);
       }
-      unfiled.push({ ...item, balance: item.balance.toNumber() });
+      unfiled.push(item);
     }
   }
 
