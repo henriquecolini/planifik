@@ -138,16 +138,15 @@ export interface CreateItemRequest {
   folderId?: string | null;
   title: string;
   type: ItemType;
-  amount: number;
   icon: string;
   bank?: string | null;
-  monthlyBalance?: number | null;
   month?: string;
   startMonth: string;
   endMonth?: string | null;
   dueDay?: number | null;
   dueNextMonth?: boolean;
   dueDate?: string | null;
+  amount: number | null;
   defaultAmount?: number | null;
 }
 
@@ -156,15 +155,14 @@ export interface UpdateItemRequest {
   title?: string;
   icon?: string;
   bank?: string | null;
-  monthlyBalance?: number | null;
   month?: string;
   startMonth?: string;
   endMonth?: string | null;
   dueDay?: number | null;
   dueNextMonth?: boolean;
   dueDate?: string | null;
+  amount: number | null;
   defaultAmount?: number | null;
-  resetToDefault?: boolean;
 }
 
 export interface PayItemRequest {

@@ -97,7 +97,7 @@ const translations = {
   recurrenceField: { en: "Recurrence", "pt-BR": "Recorrência" },
   recurrenceOnce: { en: "One time", "pt-BR": "Uma vez" },
   recurrenceForever: { en: "Every month (forever)", "pt-BR": "Todo mês (sempre)" },
-  recurrenceLimited: { en: "Every month for N months", "pt-BR": "Todo mês por N meses" },
+  recurrenceLimited: { en: "Every month (for N months)", "pt-BR": "Todo mês (por N meses)" },
   numberOfMonths: { en: "Number of months", "pt-BR": "Número de meses" },
   until: { en: "Until", "pt-BR": "Até" },
   dueDayField: { en: "Due day (optional)", "pt-BR": "Dia de vencimento (opcional)" },
@@ -113,15 +113,14 @@ const translations = {
   defaultBalance: { en: "Default balance", "pt-BR": "Valor padrão" },
   monthBalance: { en: "This month's balance", "pt-BR": "Valor deste mês" },
   resetToDefault: { en: "Reset to default", "pt-BR": "Redefinir para o padrão" },
-  bothBalancesExplain: {
-    en: "This item has a specific balance for this month and a global default.",
-    "pt-BR": "Este item tem um valor específico para este mês e um valor padrão global.",
-  },
   selectBank: { en: "Select bank", "pt-BR": "Selecionar banco" },
   chooseIcon: { en: "Choose icon", "pt-BR": "Escolher ícone" },
   titleRequired: { en: "Title is required.", "pt-BR": "Nome é obrigatório." },
   validAmount: { en: "Enter a valid amount.", "pt-BR": "Informe um valor válido." },
-  negativeHint: { en: "Press − to make it negative.", "pt-BR": "Pressione − para valor negativo." },
+  negativeHint: {
+    en: "The amount may be positive or negative.",
+    "pt-BR": "O saldo pode ser positivo ou negativo.",
+  },
   selectBankError: { en: "Please select a bank.", "pt-BR": "Selecione um banco." },
   typeRequired: { en: "Type is required.", "pt-BR": "O tipo é obrigatório." },
 

@@ -41,8 +41,7 @@ function AddItemModal({
   // ── Form state ─────────────────────────────────────────────────────────────
   const [title, setTitle] = useState("");
   const [type, setType] = useState<ItemType | "">("");
-  // Amount is stored in reais as a number. For checking accounts this can be negative.
-  const [amountReais, setAmountReais] = useState(0);
+  const [amount, setAmount] = useState(null as number | null);
   const [icon, setIcon] = useState("💡");
   const [bank, setBank] = useState("generic");
   const [folderId, setFolderId] = useState("");
@@ -50,9 +49,7 @@ function AddItemModal({
   const [repeatCount, setRepeatCount] = useState("3");
   const [dueDay, setDueDay] = useState("");
   const [dueDayNextMonth, setDueDayNextMonth] = useState(false);
-  const [isDefaultBalance, setIsDefaultBalance] = useState(false);
-  const [defaultAmountReais, setDefaultAmountReais] = useState(0);
-  const [resetToDefault, setResetToDefault] = useState(false);
+  const [defaultAmount, setDefaultAmount] = useState(0);
 
   // Tracks if the user has manually picked an icon or bank
   const [hasPickedIcon, setHasPickedIcon] = useState(false);
@@ -84,10 +81,8 @@ function AddItemModal({
     if (editItem) {
       setTitle(editItem.title);
       setType(editItem.type);
-      setAmountReais(editItem.monthBalance ?? editItem.balance ?? 0);
-      setDefaultAmountReais(editItem.defaultAmount ?? 0);
-      setIsDefaultBalance(editItem.defaultAmount != null && editItem.monthBalance == null);
-      setResetToDefault(false);
+      setAmount(editItem.monthBalance ?? null);
+      setDefaultAmount(editItem.defaultAmount ?? 0);
       setIcon(editItem.icon);
       setBank(editItem.bank ?? "");
       setFolderId(editItem.folderId ?? "");
@@ -108,7 +103,7 @@ function AddItemModal({
     } else {
       setTitle("");
       setType("");
-      setAmountReais(0);
+      setAmount(null);
       setIcon("💡");
       setBank("generic");
       setFolderId("");
@@ -117,9 +112,7 @@ function AddItemModal({
       setDueDay("");
       setDueDayNextMonth(false);
       setError("");
-      setIsDefaultBalance(false);
-      setDefaultAmountReais(0);
-      setResetToDefault(false);
+      setDefaultAmount(0);
       setHasPickedIcon(false);
     }
 
@@ -138,13 +131,6 @@ function AddItemModal({
     const d = new Date(y, m - 1 + count - 1, 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   })();
-
-  // ── Submit ─────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (resetToDefault && amountReais !== defaultAmountReais) {
-      setResetToDefault(false);
-    }
-  }, [amountReais, resetToDefault, defaultAmountReais]);
 
   // ── Dynamic bank selection ────────────────────────────────────────────────
   useEffect(() => {
@@ -177,12 +163,10 @@ function AddItemModal({
         setDueDayNextMonth(false);
       } else if (newType === "CREDIT_CARD") {
         setRecurrence("forever");
-        setIsDefaultBalance(false);
         setDueDay("10");
         setDueDayNextMonth(true);
       } else if (newType === "CHECKING_ACCOUNT") {
         setRecurrence("forever");
-        setIsDefaultBalance(false);
         setDueDay("");
         setDueDayNextMonth(true);
       }
@@ -193,13 +177,6 @@ function AddItemModal({
 
   const handleRecurrenceChange = (newRecurrence: RecurrenceMode) => {
     setRecurrence(newRecurrence);
-    if (!isEditing && newRecurrence !== "once") {
-      if (type === "BILL" || type === "INCOME") {
-        setIsDefaultBalance(true);
-      } else if (type === "CREDIT_CARD" || type === "CHECKING_ACCOUNT") {
-        setIsDefaultBalance(false);
-      }
-    }
   };
 
   const handleDueDayChange = (val: string) => {
@@ -228,18 +205,18 @@ function AddItemModal({
         folderId: folderId || null,
         title: title.trim(),
         type,
-        amount: amountReais,
         icon: isAccountType(type) ? bank || "🏦" : icon,
         bank: isAccountType(type) ? bank || null : null,
-        monthlyBalance: resetToDefault ? null : amountReais,
         month: defaultMonth,
         startMonth: isEditing ? undefined : defaultMonth,
         endMonth: computedEndMonth,
         dueDay: dueDay ? parseInt(dueDay, 10) : null,
         dueNextMonth: dueDayNextMonth,
-        defaultAmount: isDefaultBalance ? amountReais : isEditing ? defaultAmountReais : null,
-        resetToDefault: isEditing ? resetToDefault || isDefaultBalance : undefined,
+        amount: amount,
+        defaultAmount: defaultAmount,
       };
+
+      console.log(body);
 
       const url = isEditing ? `/api/items/${editItem!.id}` : "/api/items";
       const method = isEditing ? "PATCH" : "POST";
@@ -434,12 +411,8 @@ function AddItemModal({
           </div>
           {/* ── Amount (CurrencyInput) ── */}
           <div className="space-y-1">
-            {isEditing && editItem?.defaultAmount != null && recurrence != "once" ? (
+            {recurrence != "once" ? (
               <div className="space-y-3 bg-base p-3 rounded-lg border border-border-default">
-                <p className="text-[11px] text-text-secondary leading-tight">
-                  {t("bothBalancesExplain")}
-                </p>
-
                 <div className="space-y-1">
                   <label className="block text-xs font-medium text-text-secondary">
                     {t("monthBalance")}
@@ -448,9 +421,10 @@ function AddItemModal({
                     <div className="flex-1 flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
                       <CurrencyInput
                         key={`month-${amountKey}`}
-                        defaultValue={amountReais}
+                        value={amount === null ? defaultAmount : undefined}
+                        defaultValue={amount === null ? defaultAmount : amount}
                         onValueChange={(v, _, values) =>
-                          setAmountReais(values?.float != null ? ensureSign(values.float) : 0)
+                          setAmount(values?.float != null ? ensureSign(values.float) : 0)
                         }
                         onFocus={(e) => e.target.select()}
                         allowNegativeValue={!forcePositive}
@@ -461,13 +435,12 @@ function AddItemModal({
                         className="flex-1 text-sm text-text-primary px-3 py-2 text-left bg-transparent outline-none"
                       />
                     </div>
-                    {editItem?.monthBalance != null && !resetToDefault && (
+                    {amount != null && (
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => {
-                          setAmountReais(defaultAmountReais);
-                          setResetToDefault(true);
+                          setAmount(null);
                           setAmountKey((k) => k + 1);
                         }}
                         className="text-[11px] h-9"
@@ -485,9 +458,9 @@ function AddItemModal({
                   <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
                     <CurrencyInput
                       key={`default-${amountKey}`}
-                      defaultValue={defaultAmountReais}
+                      defaultValue={defaultAmount}
                       onValueChange={(v, _, values) =>
-                        setDefaultAmountReais(values?.float != null ? ensureSign(values.float) : 0)
+                        setDefaultAmount(values?.float != null ? ensureSign(values.float) : 0)
                       }
                       onFocus={(e) => e.target.select()}
                       allowNegativeValue={!forcePositive}
@@ -515,10 +488,14 @@ function AddItemModal({
                 <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
                   <CurrencyInput
                     key={amountKey}
-                    defaultValue={amountReais}
-                    onValueChange={(v, _, values) =>
-                      setAmountReais(values?.float != null ? ensureSign(values.float) : 0)
-                    }
+                    defaultValue={amount !== null ? amount : defaultAmount}
+                    onValueChange={(v, _, values) => {
+                      let value = values?.float != null ? ensureSign(values.float) : 0;
+                      setDefaultAmount(value);
+                      if (amount !== null) {
+                        setAmount(value);
+                      }
+                    }}
                     onFocus={(e) => e.target.select()}
                     allowNegativeValue={!forcePositive}
                     decimalSeparator=","
@@ -528,18 +505,6 @@ function AddItemModal({
                     className="flex-1 text-sm text-text-primary px-3 py-2 text-left bg-transparent outline-none"
                   />
                 </div>
-
-                {recurrence !== "once" && (
-                  <label className="flex items-center gap-2 cursor-pointer mt-1.5 select-none">
-                    <input
-                      type="checkbox"
-                      checked={isDefaultBalance}
-                      onChange={(e) => setIsDefaultBalance(e.target.checked)}
-                      className="rounded border-border-default accent-accent w-4 h-4"
-                    />
-                    <span className="text-xs text-text-secondary">{t("setDefaultBalance")}</span>
-                  </label>
-                )}
               </>
             )}
           </div>

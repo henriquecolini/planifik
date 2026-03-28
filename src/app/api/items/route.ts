@@ -49,14 +49,14 @@ export async function POST(req: NextRequest) {
           ? new Decimal(body.defaultAmount)
           : null,
       balances:
-        body.defaultAmount !== undefined && body.defaultAmount !== null
-          ? undefined
-          : {
+        body.amount !== null
+          ? {
               create: {
                 month: body.month ?? body.startMonth,
-                amount: new Decimal(body.monthlyBalance ?? body.amount ?? 0),
+                amount: new Decimal(body.amount ?? 0),
               },
-            },
+            }
+          : undefined,
     },
     include: {
       user: { select: { id: true, name: true, email: true, image: true } },

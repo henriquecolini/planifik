@@ -161,7 +161,7 @@ export function ItemCard({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          monthlyBalance: newBalance,
+          amount: newBalance,
           month,
         }),
       });

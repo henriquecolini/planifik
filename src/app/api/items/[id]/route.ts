@@ -44,25 +44,26 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const body: UpdateItemRequest = await req.json();
 
-  // If resetToDefault is true, delete the month's balance record
-  if (body.resetToDefault && body.month) {
-    await prisma.itemBalance.deleteMany({
-      where: { itemId: params.id, month: body.month },
-    });
-  } else if (body.monthlyBalance !== undefined && body.month) {
-    // If monthlyBalance is provided, we update/create the ItemBalance record
-    const balanceAmount = body.monthlyBalance ? new Decimal(body.monthlyBalance) : new Decimal(0);
-    await prisma.itemBalance.upsert({
-      where: { itemId_month: { itemId: params.id, month: body.month } },
-      create: {
-        itemId: params.id,
-        month: body.month,
-        amount: balanceAmount,
-      },
-      update: {
-        amount: balanceAmount,
-      },
-    });
+  if (body.month) {
+    if (typeof body.amount !== "number") {
+      await prisma.itemBalance.deleteMany({
+        where: { itemId: params.id, month: body.month },
+      });
+    } else {
+      // If amount is provided, we update/create the ItemBalance record
+      const balanceAmount = new Decimal(body.amount);
+      await prisma.itemBalance.upsert({
+        where: { itemId_month: { itemId: params.id, month: body.month } },
+        create: {
+          itemId: params.id,
+          month: body.month,
+          amount: balanceAmount,
+        },
+        update: {
+          amount: balanceAmount,
+        },
+      });
+    }
   }
 
   const updated = await prisma.item.update({
