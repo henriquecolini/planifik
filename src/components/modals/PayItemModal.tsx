@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Modal, Toggle } from "@/components/ui/index";
+import { Button, Modal } from "@/components/ui";
 import { BankIcon, ItemIcon } from "@/components/Icons";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -136,10 +136,12 @@ export function PayItemModal({
         )
       ) : (
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-text-secondary">
-            {isCard ? t("payFrom") : t("payingWith")}{" "}
-            <span className="text-text-muted font-normal">({t("optional")})</span>
-          </p>
+          {(checkingAccounts.length > 0 || creditCards.length > 0) && (
+            <p className="text-xs font-medium text-text-secondary">
+              {isCard ? t("payFrom") : t("payingWith")}{" "}
+              <span className="text-text-muted font-normal">({t("optional")})</span>
+            </p>
+          )}
           {checkingAccounts.map((acc) => (
             <AccountOption key={acc.id} acc={acc} />
           ))}

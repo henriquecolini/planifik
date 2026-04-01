@@ -1,22 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  MdCheck,
-  MdDragIndicator,
-  MdEditSquare,
-  MdMoreVert,
-  MdRotateLeft,
-  MdDelete,
-} from "react-icons/md";
+import { MdCheck, MdEditSquare, MdMoreVert, MdRotateLeft, MdDelete } from "react-icons/md";
 import { cn, dueDateInfo, getDueDateForMonth } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { BankIcon, ItemIcon } from "./Icons";
 import type { Item, ItemType } from "@/types";
-import { CurrencyInput, CurrencyInputOnChangeValues } from "react-currency-input-field";
+import { CurrencyInputOnChangeValues } from "react-currency-input-field";
 import { ColoredCurrency } from "@/components/ColoredCurrency";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers";
+import { SmartCurrencyInput } from "@/components/SmartCurrencyInput";
 
 interface ItemCardProps {
   item: Item;
@@ -247,7 +241,7 @@ export function ItemCard({
       {/* Amount */}
       {editing ? (
         <div className="flex items-center border border-accent rounded-md overflow-hidden bg-white focus-within:ring-1 focus-within:ring-accent/30">
-          <CurrencyInput
+          <SmartCurrencyInput
             ref={currencyRef}
             defaultValue={numAmount}
             value={strAmount}

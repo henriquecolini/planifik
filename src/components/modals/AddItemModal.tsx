@@ -7,7 +7,7 @@ import type { CreateItemRequest, Folder, Item, ItemType, UpdateItemRequest } fro
 import { BANKS, ITEM_ICONS } from "@/types";
 import { cn } from "@/lib/utils";
 import { BankIcon } from "@/components/Icons";
-import { CurrencyInput } from "react-currency-input-field";
+import { SmartCurrencyInput } from "@/components/SmartCurrencyInput";
 
 interface AddItemModalProps {
   open: boolean;
@@ -417,7 +417,7 @@ function AddItemModal({
                   </label>
                   <div className="flex gap-2">
                     <div className="flex-1 flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
-                      <CurrencyInput
+                      <SmartCurrencyInput
                         key={`month-${amountKey}`}
                         value={monthAmount === null ? defaultAmount : undefined}
                         defaultValue={monthAmount === null ? defaultAmount : monthAmount}
@@ -454,7 +454,7 @@ function AddItemModal({
                     {t("defaultBalance")}
                   </label>
                   <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
-                    <CurrencyInput
+                    <SmartCurrencyInput
                       key={`default-${amountKey}`}
                       defaultValue={defaultAmount}
                       onValueChange={(v, _, values) =>
@@ -484,7 +484,7 @@ function AddItemModal({
                 )}
 
                 <div className="flex items-center bg-white border border-border-default rounded-lg overflow-hidden focus-within:border-accent transition-colors">
-                  <CurrencyInput
+                  <SmartCurrencyInput
                     key={amountKey}
                     defaultValue={monthAmount !== null ? monthAmount : defaultAmount}
                     onValueChange={(v, _, values) => {
