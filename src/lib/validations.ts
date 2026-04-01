@@ -74,8 +74,8 @@ export const UpdateItemSchema = z.object({
 
 export const PayItemRequestSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
-  paymentMethod: PaymentMethodSchema.optional(),
-  paymentItemId: z.string().optional(),
+  paymentMethod: PaymentMethodSchema.nullable().optional(),
+  paymentItemId: z.string().nullable().optional(),
   rollback: z.boolean().optional(),
 });
 

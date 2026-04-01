@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: planifik-db
+    environment:
+      POSTGRES_USER: planifik
+      POSTGRES_PASSWORD: planifik
+      POSTGRES_DB: planifik
+    ports:
+      - "5432:5432"
+    volumes:
+      - planifik_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  planifik_data:
