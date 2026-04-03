@@ -6,6 +6,7 @@ const nextConfig = {
       { protocol: "https", hostname: "*.googleusercontent.com" },
     ],
   },
+  output: 'standalone'
 };
 
 module.exports = nextConfig;
