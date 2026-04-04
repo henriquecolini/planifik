@@ -30,7 +30,7 @@ services:
       - "3000:3000"
 
   watchtower:
-    image: containrrr/watchtower
+    image: nickfedor/watchtower
     restart: unless-stopped
     container_name: planifik-watchtower
     volumes:
