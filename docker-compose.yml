@@ -29,5 +29,18 @@ services:
     ports:
       - "3000:3000"
 
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    container_name: planifik-watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/config.json  # for GHCR auth
+    environment:
+      WATCHTOWER_POLL_INTERVAL: 30         # check every 30 seconds
+      WATCHTOWER_CLEANUP: "true"           # remove old images after update
+      WATCHTOWER_INCLUDE_STOPPED: "false"
+    command: planifik-app
+
 volumes:
   planifik_data:
