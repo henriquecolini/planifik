@@ -4,7 +4,6 @@ FROM node:20-alpine AS base
 # 2. Install dependencies
 FROM base AS deps
 WORKDIR /app
-RUN apk add --no-cache openssl libstdc++
 
 COPY package.json package-lock.json ./
 ENV NODE_ENV=development
@@ -13,17 +12,18 @@ RUN npm ci
 # 3. Build app
 FROM base AS builder
 WORKDIR /app
+RUN apk add --no-cache openssl
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npx prisma@5.22.0 generate
+RUN npx --no-install prisma generate
 RUN npm run build
 
 # 4. Production image
 FROM base AS runner
 WORKDIR /app
-RUN apk add --no-cache openssl libstdc++ postgresql-client
+RUN apk add --no-cache openssl postgresql-client
 
 ENV NODE_ENV=production
 
@@ -31,6 +31,9 @@ ENV NODE_ENV=production
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Prisma needs schema (sometimes)
 COPY prisma ./prisma

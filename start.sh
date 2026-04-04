@@ -8,7 +8,7 @@ done
 
 echo "Database is ready!"
 
-npx prisma@5.22.0 migrate deploy
+npx --no-install prisma migrate deploy
 
 echo "Starting app..."
 
